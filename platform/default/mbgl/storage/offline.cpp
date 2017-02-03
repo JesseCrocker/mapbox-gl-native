@@ -12,31 +12,18 @@ namespace mbgl {
 
 OfflineTilePyramidRegionDefinition::OfflineTilePyramidRegionDefinition(
     std::string styleURL_, LatLngBounds bounds_, double minZoom_, double maxZoom_, float pixelRatio_)
-    : OfflineTilePyramidRegionDefinition(styleURL_, bounds_, minZoom_, maxZoom_, pixelRatio_, {}) {
-    
-}
-    
-OfflineTilePyramidRegionDefinition::OfflineTilePyramidRegionDefinition(
-    std::string styleURL_, LatLngBounds bounds_, double minZoom_, double maxZoom_,
-    float pixelRatio_, std::vector<CanonicalTileID> tileList_)
     : styleURL(std::move(styleURL_)),
       bounds(std::move(bounds_)),
       minZoom(minZoom_),
       maxZoom(maxZoom_),
-      pixelRatio(pixelRatio_),
-      tileList(std::move(tileList_)) {
+      pixelRatio(pixelRatio_) {
     if (minZoom < 0 || maxZoom < 0 || maxZoom < minZoom || pixelRatio < 0 ||
         !std::isfinite(minZoom) || std::isnan(maxZoom) || !std::isfinite(pixelRatio)) {
         throw std::invalid_argument("Invalid offline region definition");
     }
 }
 
-
 std::vector<CanonicalTileID> OfflineTilePyramidRegionDefinition::tileCover(SourceType type, uint16_t tileSize, const Range<uint8_t>& zoomRange) const {
-    
-    if (!tileList.empty()) {
-        return tileList;
-    }
     double minZ = std::max<double>(util::coveringZoomLevel(minZoom, type, tileSize), zoomRange.min);
     double maxZ = std::min<double>(util::coveringZoomLevel(maxZoom, type, tileSize), zoomRange.max);
 
