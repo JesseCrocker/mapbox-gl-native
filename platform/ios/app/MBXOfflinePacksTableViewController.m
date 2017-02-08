@@ -1,5 +1,6 @@
 #import "MBXOfflinePacksTableViewController.h"
 
+#import "MGLTileID.h"
 #import <Mapbox/Mapbox.h>
 
 static NSString * const MBXOfflinePackContextNameKey = @"Name";
@@ -101,8 +102,13 @@ static NSString * const MBXOfflinePacksTableViewActiveCellReuseIdentifier = @"Ac
         if (!name.length) {
             name = nameField.placeholder;
         }
-        
-        MGLTilePyramidOfflineRegion *region = [[MGLTilePyramidOfflineRegion alloc] initWithStyleURL:mapView.styleURL bounds:mapView.visibleCoordinateBounds fromZoomLevel:mapView.zoomLevel toZoomLevel:mapView.maximumZoomLevel];
+        NSMutableArray* tileList = [NSMutableArray array];
+        [tileList addObject:@(MGLTileKey(MGLTileIDMake(10,10,10)))];
+        [tileList addObject:@(MGLTileKey(MGLTileIDMake(10,10,11)))];
+        [tileList addObject:@(MGLTileKey(MGLTileIDMake(10,10,12)))];
+
+        MGLTilePyramidOfflineRegion *region = [[MGLTilePyramidOfflineRegion alloc] initWithStyleURL:mapView.styleURL bounds:mapView.visibleCoordinateBounds
+                                                                                      fromZoomLevel:mapView.zoomLevel toZoomLevel:mapView.maximumZoomLevel tileList:tileList];
         NSData *context = [NSKeyedArchiver archivedDataWithRootObject:@{
             MBXOfflinePackContextNameKey: name,
         }];

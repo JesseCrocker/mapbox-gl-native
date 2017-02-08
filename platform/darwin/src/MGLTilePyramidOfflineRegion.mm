@@ -7,6 +7,8 @@
 #import "MGLOfflineRegion_Private.h"
 #import "MGLGeometry_Private.h"
 #import "MGLStyle.h"
+#import "MGLTileID.h"
+#include <mbgl/tile/tile_id.hpp>
 
 @interface MGLTilePyramidOfflineRegion () <MGLOfflineRegion_Private>
 
@@ -30,6 +32,13 @@
     return nil;
 }
 
+- (instancetype)initWithStyleURL:(NSURL *)styleURL bounds:(MGLCoordinateBounds)bounds fromZoomLevel:(double)minimumZoomLevel toZoomLevel:(double)maximumZoomLevel tileList:(NSArray*)tileList  {
+    if (self = [self initWithStyleURL:styleURL bounds:bounds fromZoomLevel:minimumZoomLevel toZoomLevel:maximumZoomLevel]) {
+        _tileList = tileList;
+    }
+    return self;
+}
+
 - (instancetype)initWithStyleURL:(NSURL *)styleURL bounds:(MGLCoordinateBounds)bounds fromZoomLevel:(double)minimumZoomLevel toZoomLevel:(double)maximumZoomLevel {
     if (self = [super init]) {
         if (!styleURL) {
@@ -49,6 +58,7 @@
         _bounds = bounds;
         _minimumZoomLevel = minimumZoomLevel;
         _maximumZoomLevel = maximumZoomLevel;
+        _tileList = nil;
     }
     return self;
 }
@@ -56,7 +66,16 @@
 - (instancetype)initWithOfflineRegionDefinition:(const mbgl::OfflineRegionDefinition &)definition {
     NSURL *styleURL = [NSURL URLWithString:@(definition.styleURL.c_str())];
     MGLCoordinateBounds bounds = MGLCoordinateBoundsFromLatLngBounds(definition.bounds);
-    return [self initWithStyleURL:styleURL bounds:bounds fromZoomLevel:definition.minZoom toZoomLevel:definition.maxZoom];
+    return [self initWithStyleURL:styleURL bounds:bounds fromZoomLevel:definition.minZoom toZoomLevel:definition.maxZoom tileList:nil];
+}
+
+// TODO: why can't it find this function in MGLTileID
+MGLTileID MGLTileIDFromKey(uint64_t tilekey) {
+    MGLTileID t;
+    t.z = tilekey >> 56;
+    t.x = tilekey >> 28 & 0xFFFFFFFLL;
+    t.y = tilekey & 0xFFFFFFFLL;
+    return t;
 }
 
 - (const mbgl::OfflineRegionDefinition)offlineRegionDefinition {
@@ -65,10 +84,17 @@
 #elif TARGET_OS_MAC
     const float scaleFactor = [NSScreen mainScreen].backingScaleFactor;
 #endif
+    
+    std::vector<mbgl::CanonicalTileID> tileVector;
+    for (NSNumber* value in _tileList) {
+        MGLTileID tileId = MGLTileIDFromKey([value unsignedLongLongValue]);
+        mbgl::CanonicalTileID canonicalTileID = mbgl::CanonicalTileID(tileId.z, tileId.x,tileId.y);
+        tileVector.push_back(canonicalTileID);
+    }
     return mbgl::OfflineTilePyramidRegionDefinition(_styleURL.absoluteString.UTF8String,
                                                     MGLLatLngBoundsFromCoordinateBounds(_bounds),
                                                     _minimumZoomLevel, _maximumZoomLevel,
-                                                    scaleFactor);
+                                                    scaleFactor, tileVector);
 }
 
 - (nullable instancetype)initWithCoder:(NSCoder *)coder {

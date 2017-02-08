@@ -78,8 +78,20 @@ OfflineRegionDefinition decodeOfflineRegionDefinition(const std::string& region)
     double minZoom = doc["min_zoom"].GetDouble();
     double maxZoom = doc.HasMember("max_zoom") ? doc["max_zoom"].GetDouble() : INFINITY;
     float pixelRatio = doc["pixel_ratio"].GetDouble();
+    
+    std::vector<mbgl::CanonicalTileID> tileList;
 
-    return { styleURL, bounds, minZoom, maxZoom, pixelRatio };
+    if (doc.HasMember("tile_list")) {
+        for (auto& v : doc["tile_list"].GetArray()) {
+            uint64_t key = v.GetUint64();
+            CanonicalTileID tileID = mbgl::CanonicalTileID(key >> 56,
+                                                           key >> 28 & 0xFFFFFFFLL,
+                                                           key & 0xFFFFFFFLL);
+            tileList.push_back(tileID);
+        }
+    }
+
+    return { styleURL, bounds, minZoom, maxZoom, pixelRatio, tileList};
 }
 
 std::string encodeOfflineRegionDefinition(const OfflineRegionDefinition& region) {
@@ -101,7 +113,21 @@ std::string encodeOfflineRegionDefinition(const OfflineRegionDefinition& region)
     }
 
     doc.AddMember("pixel_ratio", region.pixelRatio, doc.GetAllocator());
+  
+    if (!region.tileList.empty()) {
+        rapidjson::GenericValue<rapidjson::UTF8<>, rapidjson::CrtAllocator> tileList(rapidjson::kArrayType);
 
+        for ( auto &i : region.tileList ) {
+            uint64_t zoom = (uint64_t) i.z & 0xFFLL; // 8bits, 256 levels
+            uint64_t x = (uint64_t) i.x & 0xFFFFFFFLL;  // 28 bits
+            uint64_t y = (uint64_t) i.y & 0xFFFFFFFLL;  // 28 bits
+            uint64_t key = (zoom << 56) | (x << 28) | (y << 0);
+            tileList.PushBack(key, doc.GetAllocator());
+        
+        }
+        doc.AddMember("tile_list", tileList, doc.GetAllocator());
+    }
+    
     rapidjson::StringBuffer buffer;
     rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
     doc.Accept(writer);
