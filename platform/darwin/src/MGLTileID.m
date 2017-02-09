@@ -33,7 +33,7 @@ uint64_t MGLTileKey(MGLTileID tile) {
 }
 
 
-MGLTileID MGLTileIDMake(uint32_t x, uint32_t y, uint32_t z) {
+MGLTileID MGLTileIDMake(uint32_t x, uint32_t y, uint8_t z) {
   MGLTileID t;
   t.x = x;
   t.y = y;

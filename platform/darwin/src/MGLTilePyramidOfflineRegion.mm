@@ -32,7 +32,7 @@
     return nil;
 }
 
-- (instancetype)initWithStyleURL:(NSURL *)styleURL bounds:(MGLCoordinateBounds)bounds fromZoomLevel:(double)minimumZoomLevel toZoomLevel:(double)maximumZoomLevel tileList:(NSArray*)tileList  {
+- (instancetype)initWithStyleURL:(NSURL *)styleURL bounds:(MGLCoordinateBounds)bounds fromZoomLevel:(double)minimumZoomLevel toZoomLevel:(double)maximumZoomLevel tileList:(nullable NSArray*)tileList  {
     if (self = [self initWithStyleURL:styleURL bounds:bounds fromZoomLevel:minimumZoomLevel toZoomLevel:maximumZoomLevel]) {
         _tileList = tileList;
     }
@@ -69,15 +69,6 @@
     return [self initWithStyleURL:styleURL bounds:bounds fromZoomLevel:definition.minZoom toZoomLevel:definition.maxZoom tileList:nil];
 }
 
-// TODO: why can't it find this function in MGLTileID
-MGLTileID MGLTileIDFromKey(uint64_t tilekey) {
-    MGLTileID t;
-    t.z = tilekey >> 56;
-    t.x = tilekey >> 28 & 0xFFFFFFFLL;
-    t.y = tilekey & 0xFFFFFFFLL;
-    return t;
-}
-
 - (const mbgl::OfflineRegionDefinition)offlineRegionDefinition {
 #if TARGET_OS_IPHONE || TARGET_OS_SIMULATOR
     const float scaleFactor = [UIScreen instancesRespondToSelector:@selector(nativeScale)] ? [[UIScreen mainScreen] nativeScale] : [[UIScreen mainScreen] scale];
@@ -86,6 +77,7 @@ MGLTileID MGLTileIDFromKey(uint64_t tilekey) {
 #endif
     
     std::vector<mbgl::CanonicalTileID> tileVector;
+    tileVector.reserve(_tileList.count);
     for (NSNumber* value in _tileList) {
         MGLTileID tileId = MGLTileIDFromKey([value unsignedLongLongValue]);
         mbgl::CanonicalTileID canonicalTileID = mbgl::CanonicalTileID(tileId.z, tileId.x,tileId.y);

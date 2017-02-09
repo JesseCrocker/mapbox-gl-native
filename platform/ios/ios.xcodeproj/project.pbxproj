@@ -164,8 +164,8 @@
 		40FDA76B1CCAAA6800442548 /* MBXAnnotationView.m in Sources */ = {isa = PBXBuildFile; fileRef = 40FDA76A1CCAAA6800442548 /* MBXAnnotationView.m */; };
 		50D915441E4AA058007277BE /* MGLTileID.m in Sources */ = {isa = PBXBuildFile; fileRef = 50D915421E4A9902007277BE /* MGLTileID.m */; };
 		50D915451E4AA059007277BE /* MGLTileID.m in Sources */ = {isa = PBXBuildFile; fileRef = 50D915421E4A9902007277BE /* MGLTileID.m */; };
-		50D915461E4AA130007277BE /* MGLTileID.h in Headers */ = {isa = PBXBuildFile; fileRef = 50D915411E4A9902007277BE /* MGLTileID.h */; };
-		50D915471E4AA131007277BE /* MGLTileID.h in Headers */ = {isa = PBXBuildFile; fileRef = 50D915411E4A9902007277BE /* MGLTileID.h */; };
+		50D915461E4AA130007277BE /* MGLTileID.h in Headers */ = {isa = PBXBuildFile; fileRef = 50D915411E4A9902007277BE /* MGLTileID.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		50D915471E4AA131007277BE /* MGLTileID.h in Headers */ = {isa = PBXBuildFile; fileRef = 50D915411E4A9902007277BE /* MGLTileID.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		554180421D2E97DE00012372 /* OpenGLES.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 554180411D2E97DE00012372 /* OpenGLES.framework */; };
 		556660CA1E1BF3A900E2C41B /* MGLFoundation.h in Headers */ = {isa = PBXBuildFile; fileRef = 556660C91E1BF3A900E2C41B /* MGLFoundation.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		556660D81E1D085500E2C41B /* MGLVersionNumber.m in Sources */ = {isa = PBXBuildFile; fileRef = 556660D71E1D085500E2C41B /* MGLVersionNumber.m */; };
