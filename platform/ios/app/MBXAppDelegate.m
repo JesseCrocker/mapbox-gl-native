@@ -11,6 +11,7 @@ NSString * const MBXMapboxAccessTokenDefaultsKey = @"MBXMapboxAccessToken";
     // Set access token, unless MGLAccountManager already read it in from Info.plist.
     if ( ! [MGLAccountManager accessToken]) {
         NSString *accessToken = [[NSProcessInfo processInfo] environment][@"MAPBOX_ACCESS_TOKEN"];
+        accessToken = @"pk.eyJ1IjoidHJhaWxiZWhpbmQiLCJhIjoiSElESjdodyJ9.Kx2Uq40YykPyf19UKVMNLA";
         if (accessToken) {
             // Store to preferences so that we can launch the app later on without having to specify
             // token.
