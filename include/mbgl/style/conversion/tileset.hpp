@@ -73,6 +73,8 @@ public:
             return Error { "source cacheKey must be a string" };
           }
           result.cacheKey = std::move(*cacheKey);
+        } else {
+          result.cacheKey = result.tiles[0];
         }
 
         return result;
