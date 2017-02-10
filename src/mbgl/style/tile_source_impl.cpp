@@ -35,7 +35,9 @@ Tileset TileSourceImpl::parseTileJSON(const std::string& json, const std::string
             url = util::mapbox::canonicalizeTileURL(url, type, tileSize);
         }
     }
-
+    if ((*result).cacheKey.empty()) {
+      (*result).cacheKey = (*result).tiles[0];
+    }
     return *result;
 }
 
