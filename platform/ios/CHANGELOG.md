@@ -28,6 +28,7 @@ Mapbox welcomes participation and contributions from everyone. Please read [CONT
 * Fixed flickering that occurred when panning past the antimeridian. ([#7574](https://github.com/mapbox/mapbox-gl-native/pull/7574))
 * Fixed an issue that could prevent a cached style from appearing while the device is offline. ([#7770](https://github.com/mapbox/mapbox-gl-native/pull/7770))
 * Added `MGLDistanceFormatter` which can be used to format geographic distances. ([#7888](https://github.com/mapbox/mapbox-gl-native/pull/7888))
+* Added optional tileList parameter to MGLTilePyramidOfflineRegion to download non-rectangular offline packs, such as along a track.
 
 ## 3.4.1 
 
