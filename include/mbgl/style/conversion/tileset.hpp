@@ -66,13 +66,13 @@ public:
             result.attribution = std::move(*attribution);
         }
       
-        auto idValue = objectMember(value, "id");
-        if (idValue) {
-          optional<std::string> id = toString(*idValue);
-          if (!id) {
-            return Error { "source id must be a string" };
+        auto cacheKeyValue = objectMember(value, "cacheKey");
+        if (cacheKeyValue) {
+          optional<std::string> cacheKey = toString(*cacheKeyValue);
+          if (!cacheKey) {
+            return Error { "source cacheKey must be a string" };
           }
-          result.cacheKey = std::move(*id);
+          result.cacheKey = std::move(*cacheKey);
         }
 
         return result;
