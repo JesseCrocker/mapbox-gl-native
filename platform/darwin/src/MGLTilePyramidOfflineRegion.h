@@ -45,7 +45,8 @@ MGL_EXPORT
 @property (nonatomic, readonly) double maximumZoomLevel;
 
 /**
- A specific list of tileIds to download for this region
+ A specific list of tiles to download for this region.
+ Contains NSNumbers representing uint64_t tilekeys created by MGLTileKey
 */
 @property (nonatomic, readonly, nullable) NSArray* tileList;
 
@@ -80,6 +81,11 @@ MGL_EXPORT
  */
 - (instancetype)initWithStyleURL:(nullable NSURL *)styleURL bounds:(MGLCoordinateBounds)bounds fromZoomLevel:(double)minimumZoomLevel toZoomLevel:(double)maximumZoomLevel NS_DESIGNATED_INITIALIZER;
 
+/**
+  @param tileList An array of NSNumbers created by MGLTileKey representing the specific 
+    set of tiles to download for this region. If this is nil or empty a rectangular area
+    will be downloaded. 
+ */
 - (instancetype)initWithStyleURL:(NSURL *)styleURL bounds:(MGLCoordinateBounds)bounds fromZoomLevel:(double)minimumZoomLevel toZoomLevel:(double)maximumZoomLevel tileList:(nullable NSArray*)tileList;
 
 @end

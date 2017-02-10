@@ -12,7 +12,7 @@ bool MGLTileIDsEqual(MGLTileID one, MGLTileID two) {
   return (one.x == two.x) && (one.y == two.y) && (one.z == two.z);
 }
 
-// Returns an MGLTileId from tile key
+
 MGLTileID MGLTileIDFromKey(uint64_t tilekey) {
     MGLTileID t;
     t.z = tilekey >> 56;
