@@ -892,5 +892,18 @@ uint64_t OfflineDatabase::getOfflineMapboxTileCount() {
     offlineMapboxTileCount = stmt->get<int64_t>(0);
     return *offlineMapboxTileCount;
 }
+  
+  void OfflineDatabase::setMaximumCacheSize(uint64_t cacheSize) {
+    bool runEviction = cacheSize < maximumCacheSize;
+    maximumCacheSize = cacheSize;
+    if (runEviction) {
+      evict(0);
+    }
+  }
+  
+  uint64_t OfflineDatabase::getMaximumCacheSize() {
+    return maximumCacheSize;
+  }
+
 
 } // namespace mbgl
