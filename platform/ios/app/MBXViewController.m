@@ -1559,6 +1559,7 @@ typedef NS_ENUM(NSInteger, MBXSettingsMiscellaneousRows) {
     }
 }
 
+//#define GAIATOPO
 - (IBAction)cycleStyles:(__unused id)sender
 {
     static NSArray *styleNames;
@@ -1567,7 +1568,9 @@ typedef NS_ENUM(NSInteger, MBXSettingsMiscellaneousRows) {
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         styleNames = @[
+#ifdef GAIATOPO
                        @"gaiatopo",
+#endif
             @"Streets",
             @"Outdoors",
             @"Light",
@@ -1576,7 +1579,9 @@ typedef NS_ENUM(NSInteger, MBXSettingsMiscellaneousRows) {
             @"Satellite Streets",
         ];
         styleURLs = @[
+#ifdef GAIATOPO
                       [NSURL URLWithString:@"https://static.gaiagps.com/GaiaTopoGL/gaiatopo-source.json"],
+#endif
             [MGLStyle streetsStyleURLWithVersion:MGLStyleDefaultVersion],
             [MGLStyle outdoorsStyleURLWithVersion:MGLStyleDefaultVersion],
             [MGLStyle lightStyleURLWithVersion:MGLStyleDefaultVersion],
