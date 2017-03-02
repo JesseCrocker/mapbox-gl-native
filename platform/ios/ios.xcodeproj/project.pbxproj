@@ -696,7 +696,7 @@
 		DA1DC96F1CB6C6CE006E619F /* threestates.geojson */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = threestates.geojson; sourceTree = "<group>"; };
 		DA1DC9961CB6E046006E619F /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		DA1DC9981CB6E054006E619F /* MBXAppDelegate.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MBXAppDelegate.m; sourceTree = "<group>"; };
-		DA1DC99A1CB6E064006E619F /* MBXViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MBXViewController.m; sourceTree = "<group>"; };
+		DA1DC99A1CB6E064006E619F /* MBXViewController.m */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 4; lastKnownFileType = sourcecode.c.objc; path = MBXViewController.m; sourceTree = "<group>"; tabWidth = 4; };
 		DA1DC99C1CB6E076006E619F /* Default-568h@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Default-568h@2x.png"; sourceTree = "<group>"; };
 		DA1DC99E1CB6E088006E619F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		DA2207BE1DC0805F0002F84D /* MGLStyleValueTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = MGLStyleValueTests.swift; path = ../../darwin/test/MGLStyleValueTests.swift; sourceTree = "<group>"; };
@@ -1902,7 +1902,7 @@
 				TargetAttributes = {
 					DA1DC9491CB6C1C2006E619F = {
 						CreatedOnToolsVersion = 7.3;
-						DevelopmentTeam = GJZR2MEM28;
+						DevelopmentTeam = 8VTZU79ASP;
 						LastSwiftMigration = 0820;
 					};
 					DA25D5B81CCD9EDE00607828 = {
@@ -2541,6 +2541,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				DEVELOPMENT_TEAM = 8VTZU79ASP;
 				INFOPLIST_FILE = "$(SRCROOT)/app/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
@@ -2554,6 +2555,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				DEVELOPMENT_TEAM = 8VTZU79ASP;
 				INFOPLIST_FILE = "$(SRCROOT)/app/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";

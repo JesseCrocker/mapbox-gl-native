@@ -104,6 +104,9 @@ typedef NS_ENUM(NSInteger, MBXSettingsMiscellaneousRows) {
 @implementation MBXSpriteBackedAnnotation
 @end
 
+@interface RandomWaypointSource : NSObject <MGLComputedShapeSourceDataSource>
+@end
+
 @interface MBXViewController () <UITableViewDelegate,
                                  UITableViewDataSource,
                                  MGLMapViewDelegate,
@@ -118,6 +121,38 @@ typedef NS_ENUM(NSInteger, MBXSettingsMiscellaneousRows) {
 @property (nonatomic) BOOL usingLocaleBasedCountryLabels;
 @property (nonatomic) BOOL reuseQueueStatsEnabled;
 @property (nonatomic) BOOL showZoomLevelEnabled;
+
+@property (nonatomic, strong) RandomWaypointSource *waypointSource;
+
+@end
+
+@implementation RandomWaypointSource
+
+- (NSArray<id <MGLFeature>>*)featuresInCoordinateBounds:(MGLCoordinateBounds)bounds zoomLevel:(NSUInteger)zoom {
+    NSMutableArray <id <MGLFeature>> * features = [NSMutableArray array];
+    
+    if(arc4random_uniform(4) != 0) {
+        int waypointCount = 200;
+        CGFloat latSpan = fabs(bounds.ne.latitude - bounds.sw.latitude);
+        CGFloat lonSpan = fabs(bounds.ne.longitude - bounds.sw.longitude);
+        
+        for(int i = 0; i < waypointCount; i++) {
+            CLLocationCoordinate2D coord = bounds.sw;
+            coord.latitude += arc4random_uniform((int)latSpan * 100)/100;
+            coord.longitude += arc4random_uniform((int)lonSpan * 100)/100;
+            MGLPointFeature *point = [[MGLPointFeature alloc] init];
+            point.coordinate = coord;
+            point.attributes = @{
+                                 @"i":@(i),
+                                 @"point": @YES,
+                                 @"icon": i % 2 == 0 ? @"red-pin": @"purple-pin"
+                                 };
+            [features addObject:point];
+        }
+    }
+    
+    return features;
+}
 
 @end
 
@@ -196,6 +231,12 @@ typedef NS_ENUM(NSInteger, MBXSettingsMiscellaneousRows) {
         }
         [self presentViewController:alertController animated:YES completion:nil];
     }
+    
+    [NSTimer scheduledTimerWithTimeInterval:0.3
+                                    repeats:YES
+                                      block:^(NSTimer * _Nonnull timer) {
+                                          [self cycleStyles:nil];
+                                      }];
 }
 
 - (void)saveState:(__unused NSNotification *)notification
@@ -1526,6 +1567,7 @@ typedef NS_ENUM(NSInteger, MBXSettingsMiscellaneousRows) {
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         styleNames = @[
+                       @"gaiatopo",
             @"Streets",
             @"Outdoors",
             @"Light",
@@ -1534,6 +1576,7 @@ typedef NS_ENUM(NSInteger, MBXSettingsMiscellaneousRows) {
             @"Satellite Streets",
         ];
         styleURLs = @[
+                      [NSURL URLWithString:@"https://static.gaiagps.com/GaiaTopoGL/gaiatopo-source.json"],
             [MGLStyle streetsStyleURLWithVersion:MGLStyleDefaultVersion],
             [MGLStyle outdoorsStyleURLWithVersion:MGLStyleDefaultVersion],
             [MGLStyle lightStyleURLWithVersion:MGLStyleDefaultVersion],
@@ -1557,9 +1600,9 @@ typedef NS_ENUM(NSInteger, MBXSettingsMiscellaneousRows) {
                 }
             }
         }
-        NSAssert(numStyleURLMethods == styleNames.count,
-                 @"MGLStyle provides %u default styles but iosapp only knows about %lu of them.",
-                 numStyleURLMethods, (unsigned long)styleNames.count);
+//        NSAssert(numStyleURLMethods == styleNames.count,
+//                 @"MGLStyle provides %u default styles but iosapp only knows about %lu of them.",
+//                 numStyleURLMethods, (unsigned long)styleNames.count);
     });
 
     self.styleIndex = (self.styleIndex + 1) % styleNames.count;
@@ -1810,6 +1853,9 @@ typedef NS_ENUM(NSInteger, MBXSettingsMiscellaneousRows) {
     // that a device with an English-language locale is already effectively
     // using locale-based country labels.
     _usingLocaleBasedCountryLabels = [[self bestLanguageForUser] isEqualToString:@"en"];
+    [self addImagesToStyle:style];
+    [self addRandomWaypointLayer];
+    [self addLatLonGrid];
 }
 
 - (void)mapViewRegionIsChanging:(MGLMapView *)mapView
@@ -1878,5 +1924,51 @@ typedef NS_ENUM(NSInteger, MBXSettingsMiscellaneousRows) {
     
     return features;
 }
+
+
+#pragma mark - crash reproducing
+- (void)addRandomWaypointLayer {
+    MGLComputedShapeSource *source = [[MGLComputedShapeSource alloc] initWithIdentifier:@"waypoints"
+                                                                                options:
+                                      @{
+                                        MGLShapeSourceOptionClustered: @(YES),
+                                        MGLShapeSourceOptionClusterRadius: @30,
+                                        MGLShapeSourceOptionMaximumZoomLevelForClustering:@13,
+                                        MGLShapeSourceOptionMinimumZoomLevel: @4,
+                                        MGLShapeSourceOptionMaximumZoomLevel: @20,
+                                        MGLShapeSourceOptionBuffer: @16,
+                                        }];
+    self.waypointSource = [[RandomWaypointSource alloc] init];
+    source.dataSource = self.waypointSource;
+    [self.mapView.style addSource:source];
+    
+    MGLSymbolStyleLayer *pointLayer = [[MGLSymbolStyleLayer alloc] initWithIdentifier:@"waypoints.symbol"
+                                                                               source:source];
+    pointLayer.predicate = [NSPredicate predicateWithFormat:@"cluster != %@", @YES];
+    pointLayer.iconImageName = [MGLStyleValue valueWithRawValue:@"{icon}"];
+    pointLayer.iconAllowsOverlap = [MGLStyleValue valueWithRawValue:@YES];
+    pointLayer.iconOffset = [MGLStyleValue valueWithRawValue:[NSValue valueWithCGVector:CGVectorMake(0, -1 * 16)]];
+    [self.mapView.style addLayer:pointLayer];
+
+    MGLSymbolStyleLayer *clusterLayer = [[MGLSymbolStyleLayer alloc] initWithIdentifier:@"cluster"
+                                                                               source:source];
+    clusterLayer.predicate = [NSPredicate predicateWithFormat:@"cluster == %@", @YES];
+    clusterLayer.iconImageName = [MGLStyleValue valueWithRawValue:@"red-pin"];
+    clusterLayer.text = [MGLStyleValue valueWithRawValue:@"cluster {point_count}"];
+    clusterLayer.iconAllowsOverlap = [MGLStyleValue valueWithRawValue:@YES];
+    clusterLayer.iconOffset = [MGLStyleValue valueWithRawValue:[NSValue valueWithCGVector:CGVectorMake(0, -1 * 16)]];
+    [self.mapView.style addLayer:clusterLayer];
+}
+
+
+- (void)addImagesToStyle:(MGLStyle*)style {
+  for(NSString *iconName in @[@"purple-pin", @"red-pin"]) {
+    UIImage *image = [UIImage imageNamed:iconName];
+    //    DDLogDebug(@"Adding icon %@ size:%.1f * %.1f", iconName, image.size.width, image.size.height);
+    [style setImage:image
+            forName:iconName];
+  }
+}
+
 
 @end
