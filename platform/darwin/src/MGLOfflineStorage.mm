@@ -358,6 +358,11 @@ NSString * const MGLOfflinePackMaximumCountUserInfoKey = MGLOfflinePackUserInfoK
     _mbglFileSource->setOfflineMapboxTileCountLimit(maximumCount);
 }
 
+- (void)setMaximumCacheSize:(uint64_t)cacheSize {
+  _mbglFileSource->setMaximumCacheSize(cacheSize);
+}
+
+
 #pragma mark -
 
 - (unsigned long long)countOfBytesCompleted {

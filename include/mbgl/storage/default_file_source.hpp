@@ -116,6 +116,11 @@ public:
     void setOfflineMapboxTileCountLimit(uint64_t) const;
 
     /*
+     * Sets the size of the ambient offline cache of tiles
+     */
+    void setMaximumCacheSize(uint64_t) const;
+
+    /*
      * Pause file request activity.
      *
      * If pause is called then no revalidation or network request activity

@@ -57,6 +57,9 @@ public:
     bool offlineMapboxTileCountLimitExceeded();
     uint64_t getOfflineMapboxTileCount();
 
+    void setMaximumCacheSize(uint64_t);
+    uint64_t getMaximumCacheSize();
+
 private:
     void connect(int flags);
     int userVersion();
