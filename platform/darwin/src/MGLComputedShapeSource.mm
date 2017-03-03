@@ -47,6 +47,11 @@
     return self;
 }
 
+- (void)cancel {
+    [super cancel];
+    _source = nil;
+}
+
 - (void)main {
     if ([self isCancelled]) {
         return;
@@ -106,6 +111,7 @@
 }
 
 - (void)dealloc {
+    _rawSource = NULL;
     [self.requestQueue cancelAllOperations];
 }
 
