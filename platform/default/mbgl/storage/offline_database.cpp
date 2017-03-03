@@ -807,6 +807,9 @@ bool OfflineDatabase::evict() {
   uint64_t tileCount = tileSizeStmt->get<int64_t>(0);
   uint64_t tileCacheSize = tileSizeStmt->get<int64_t>(1);
   
+  if (tileCount == 0) {
+    return false;
+  }
   // clang-format off
   Statement resourceSizeStmt = getStatement(
                                         " SELECT "
