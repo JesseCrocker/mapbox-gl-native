@@ -232,7 +232,7 @@ typedef NS_ENUM(NSInteger, MBXSettingsMiscellaneousRows) {
         [self presentViewController:alertController animated:YES completion:nil];
     }
     
-    [NSTimer scheduledTimerWithTimeInterval:0.3
+    [NSTimer scheduledTimerWithTimeInterval:0.05
                                     repeats:YES
                                       block:^(NSTimer * _Nonnull timer) {
                                           [self cycleStyles:nil];
