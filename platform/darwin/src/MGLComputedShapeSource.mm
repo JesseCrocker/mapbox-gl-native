@@ -21,6 +21,8 @@
 @property (nonatomic, assign) BOOL dataSourceImplementsFeaturesForTile;
 @property (nonatomic, assign) BOOL dataSourceImplementsFeaturesForBounds;
 
+- (bool) isRawSourceGood;
+
 @end
 
 
@@ -79,8 +81,9 @@
             featureCollection.push_back(geoJsonObject);
         }
         const auto geojson = mbgl::GeoJSON{featureCollection};
+
         dispatch_async(dispatch_get_main_queue(), ^{
-            if(![self isCancelled] && self.source.rawSource) {
+            if(![self isCancelled] && [self.source isRawSourceGood] && self.source.rawSource) {
                 self.source.rawSource->setTileData(self.z, self.x, self.y, geojson);
             }
         });
@@ -108,6 +111,10 @@
         self.rawSource = _pendingSource.get();
     }
     return self;
+}
+
+- (bool) isRawSourceGood {
+    return _pendingSource.get() != nil;
 }
 
 - (void)dealloc {
