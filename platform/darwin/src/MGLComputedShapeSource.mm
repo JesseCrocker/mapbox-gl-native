@@ -17,7 +17,7 @@
 }
 
 @property (nonatomic, readwrite) NSDictionary *options;
-@property (nonnull) mbgl::style::CustomVectorSource *rawSource;
+@property (nonnull, readonly) mbgl::style::CustomVectorSource *rawSource;
 @property (nonatomic, assign) BOOL dataSourceImplementsFeaturesForTile;
 @property (nonatomic, assign) BOOL dataSourceImplementsFeaturesForBounds;
 
@@ -100,7 +100,6 @@
          });
         
         _pendingSource = std::move(source);
-        self.rawSource = _pendingSource.get();
     }
     return self;
 }
@@ -139,7 +138,6 @@
     auto removedSource = mapView.mbglMap->removeSource(self.identifier.UTF8String);
     
     _pendingSource = std::move(reinterpret_cast<std::unique_ptr<mbgl::style::CustomVectorSource> &>(removedSource));
-    self.rawSource = _pendingSource.get();
 }
 
 - (void)reloadTileInCoordinateBounds:(MGLCoordinateBounds)bounds zoomLevel:(NSUInteger)zoomLevel {
@@ -153,6 +151,10 @@
 - (void)reloadData {
     [self.requestQueue cancelAllOperations];
     self.rawSource->reload();
+}
+
+- (mbgl::style::CustomVectorSource*) rawSource {
+    return _pendingSource.get();
 }
 
 @end
