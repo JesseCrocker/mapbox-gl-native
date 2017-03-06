@@ -67,7 +67,9 @@ public:
     std::map<UnwrappedTileID, RenderTile>& getRenderTiles();
 
     std::unordered_map<std::string, std::vector<Feature>>
-    queryRenderedFeatures(const QueryParameters&) const;
+    queryRenderedFeatures(const ScreenLineString& geometry,
+                          const TransformState& transformState,
+                          const QueryOptions& options) const;
 
     void setCacheSize(size_t);
     void onLowMemory();
