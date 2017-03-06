@@ -196,6 +196,12 @@ typedef NS_ENUM(NSInteger, MBXSettingsMiscellaneousRows) {
         }
         [self presentViewController:alertController animated:YES completion:nil];
     }
+    
+    [NSTimer scheduledTimerWithTimeInterval:0.05
+                                    repeats:YES
+                                      block:^(NSTimer * _Nonnull timer) {
+                                          [self cycleStyles:nil];
+                                      }];
 }
 
 - (void)saveState:(__unused NSNotification *)notification
@@ -1810,6 +1816,7 @@ typedef NS_ENUM(NSInteger, MBXSettingsMiscellaneousRows) {
     // that a device with an English-language locale is already effectively
     // using locale-based country labels.
     _usingLocaleBasedCountryLabels = [[self bestLanguageForUser] isEqualToString:@"en"];
+    [self addLatLonGrid];
 }
 
 - (void)mapViewRegionIsChanging:(MGLMapView *)mapView
@@ -1875,6 +1882,8 @@ typedef NS_ENUM(NSInteger, MBXSettingsMiscellaneousRows) {
         feature.attributes = @{@"value": @(x)};
         [features addObject:feature];
     }
+    
+    sleep(1);
     
     return features;
 }
