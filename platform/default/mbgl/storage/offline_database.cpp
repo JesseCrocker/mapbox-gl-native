@@ -789,68 +789,77 @@ bool OfflineDatabase::checkEvict(uint64_t neededFreeSize) {
 // This is run when offline map packs are deleted and regularly when using the map.
 // Returns true if the eviction process was run.
 bool OfflineDatabase::evict() {
+  
+  uint64_t pageSize = getPragma<int64_t>("PRAGMA page_size");
+  uint64_t pageCount = getPragma<int64_t>("PRAGMA page_count");
+  
+  auto usedSize = [&] {
+    return pageSize * (pageCount - getPragma<int64_t>("PRAGMA freelist_count"));
+  };
+  
+  // clang-format off
+  Statement tileCountStmt = getStatement(
+                                         " SELECT "
+                                         " count(*) "
+                                         "  FROM tiles "
+                                         );
+  // clang-format on
+  if (!tileCountStmt->run()) {
+    return false;
+  }
+  uint64_t totalTileCount = tileCountStmt->get<int64_t>(0);
+  if (totalTileCount == 0) return false;
+  
+  // estimate avg tile size, this will be high because it includes resource and metadata
+  // size averaged in, but that is okay because we remove resources to the same degree as tiles
+  double avgTileSize = usedSize() / totalTileCount;
+  
   // clang-format off
   Statement tileSizeStmt = getStatement(
-                                           " SELECT "
-                                           " count(*), "
-                                           " SUM(length(data)) "
-                                           "  FROM tiles "
-                                           "  LEFT JOIN region_tiles "
-                                           "  ON tile_id = tiles.id "
-                                           "  WHERE tile_id IS NULL "
+                                        " SELECT "
+                                        " count(*) "
+                                        "  FROM tiles "
+                                        "  LEFT JOIN region_tiles "
+                                        "  ON tile_id = tiles.id "
+                                        "  WHERE tile_id IS NULL "
                                         );
   // clang-format on
   if (!tileSizeStmt->run()) {
     return false;
   }
-
+  
   uint64_t tileCount = tileSizeStmt->get<int64_t>(0);
-  uint64_t tileCacheSize = tileSizeStmt->get<int64_t>(1);
-  
-  if (tileCount == 0) {
-    return false;
-  }
-  // clang-format off
-  Statement resourceSizeStmt = getStatement(
-                                        " SELECT "
-                                        " SUM(length(data)) "
-                                        "    FROM resources "
-                                        "    LEFT JOIN region_resources "
-                                        "    ON resource_id = resources.id "
-                                        "    WHERE resource_id IS NULL "
-                                        );
-  // clang-format on
-  if (!resourceSizeStmt->run()) {
-    return false;
-  }
-  
-  uint64_t resourceCacheSize = resourceSizeStmt->get<int64_t>(0);
-  float avgTileSize = tileCacheSize / tileCount;
 
-  if ((tileCacheSize + resourceCacheSize) < maximumCacheSize) {
+  if(tileCount == 0) {
+    return false;
+  }
+  
+  uint64_t tileCacheSize = tileCount * avgTileSize;
+  if (tileCacheSize < maximumCacheSize) {
     return false;
   }
   
   // Try to purge to approximately 75% of the maximum cache size
-  int64_t tilesToDelete = tileCount - (maximumCacheSize / avgTileSize) * 0.75;
-
+  int64_t tilesToDelete = tileCount - (maximumCacheSize / avgTileSize) * 0.75 - 1;
+  if (tilesToDelete < 0) return false;
+  
   // get accessed time to pivot deletes on
   // clang-format off
   Statement getPivotAccessedStmt = getStatement(
-                                            "SELECT accessed "
-                                            "  FROM tiles "
-                                            "  LEFT JOIN region_tiles "
-                                            "  ON tile_id = tiles.id "
-                                            "  WHERE tile_id IS NULL "
-                                            "ORDER BY accessed ASC "
-                                            "LIMIT 1 OFFSET ?1 "
-                                            );
+                                                "SELECT accessed "
+                                                "  FROM tiles "
+                                                "  LEFT JOIN region_tiles "
+                                                "  ON tile_id = tiles.id "
+                                                "  WHERE tile_id IS NULL "
+                                                "ORDER BY accessed ASC "
+                                                "LIMIT 1 OFFSET ?1 "
+                                                );
   // clang-format on
   getPivotAccessedStmt->bind(1, tilesToDelete);
   if (!getPivotAccessedStmt->run()) {
     return false;
   }
-
+  
   Timestamp accessed = getPivotAccessedStmt->get<Timestamp>(0);
   
   // clang-format off
@@ -880,8 +889,10 @@ bool OfflineDatabase::evict() {
   // clang-format on
   stmt2->bind(1, accessed);
   stmt2->run();
-
+  
   insertedSinceEvictCheck = 0;
+  
+  Log::Info(Event::Database, "Evicted tiles %d", tilesToDelete);
   return true;
 }
 
