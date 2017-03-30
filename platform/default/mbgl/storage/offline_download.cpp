@@ -12,6 +12,8 @@
 #include <mbgl/util/run_loop.hpp>
 #include <mbgl/util/tile_cover.hpp>
 #include <mbgl/util/tileset.hpp>
+#include <mbgl/util/logging.hpp>
+#include <chrono>
 
 #include <set>
 
@@ -74,27 +76,40 @@ OfflineRegionStatus OfflineDownload::getStatus() const {
         switch (type) {
         case SourceType::Vector:
         case SourceType::Raster: {
-            style::TileSourceImpl* tileSource =
-                static_cast<style::TileSourceImpl*>(source->baseImpl.get());
-            const variant<std::string, Tileset>& urlOrTileset = tileSource->getURLOrTileset();
-            const uint16_t tileSize = tileSource->getTileSize();
-
-            if (urlOrTileset.is<Tileset>()) {
-                result.requiredResourceCount +=
-                    definition.tileCover(type, tileSize, urlOrTileset.get<Tileset>().zoomRange).size();
+          struct timespec start, finish;
+          double elapsed;
+          clock_gettime(CLOCK_MONOTONIC, &start);
+          
+          style::TileSourceImpl* tileSource =
+          static_cast<style::TileSourceImpl*>(source->baseImpl.get());
+          const variant<std::string, Tileset>& urlOrTileset = tileSource->getURLOrTileset();
+          const uint16_t tileSize = tileSource->getTileSize();
+          
+          if (urlOrTileset.is<Tileset>()) {
+            result.requiredResourceCount +=
+            definition.tileCover(type, tileSize, urlOrTileset.get<Tileset>().zoomRange).size();
+          } else {
+            result.requiredResourceCount += 1;
+            const std::string& url = urlOrTileset.get<std::string>();
+            optional<Response> sourceResponse = offlineDatabase.get(Resource::source(url));
+            if (sourceResponse) {
+              result.requiredResourceCount +=
+              definition.tileCover(type, tileSize, style::TileSourceImpl::parseTileJSON(
+                                                                                        *sourceResponse->data, url, type, tileSize).zoomRange).size();
             } else {
-                result.requiredResourceCount += 1;
-                const std::string& url = urlOrTileset.get<std::string>();
-                optional<Response> sourceResponse = offlineDatabase.get(Resource::source(url));
-                if (sourceResponse) {
-                    result.requiredResourceCount +=
-                        definition.tileCover(type, tileSize, style::TileSourceImpl::parseTileJSON(
-                            *sourceResponse->data, url, type, tileSize).zoomRange).size();
-                } else {
-                    result.requiredResourceCountIsPrecise = false;
-                }
+              result.requiredResourceCountIsPrecise = false;
             }
-            break;
+          }
+          
+          clock_gettime(CLOCK_MONOTONIC, &finish);
+          elapsed = (finish.tv_sec - start.tv_sec) +
+          (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
+          
+          Log::Info(Event::Database, "getTileCoverTime %f ms tiles %ld",
+                     elapsed * 1000,
+                     result.requiredResourceCount);
+          
+          break;
         }
 
         case SourceType::GeoJSON: {

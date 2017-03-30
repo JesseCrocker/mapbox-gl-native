@@ -5,7 +5,7 @@
 #include <mbgl/util/string.hpp>
 #include <mbgl/util/chrono.hpp>
 #include <mbgl/util/logging.hpp>
-
+#include <chrono>
 #include "sqlite3.hpp"
 
 namespace mbgl {
@@ -50,7 +50,10 @@ void OfflineDatabase::ensureSchema() {
             case 2: migrateToVersion3(); // fall through
             case 3: // no-op and fall through
             case 4: migrateToVersion5(); // fall through
-            case 5: return;
+            case 5:
+                db->exec("create index if not exists idx_tiles_id on tiles(id)");
+
+                return;
             default: throw std::runtime_error("unknown schema version");
             }
 
@@ -346,6 +349,10 @@ bool OfflineDatabase::putResource(const Resource& resource,
 }
 
 optional<std::pair<Response, uint64_t>> OfflineDatabase::getTile(const Resource::TileData& tile) {
+  struct timespec start, finish;
+  double elapsed;
+  clock_gettime(CLOCK_MONOTONIC, &start);
+  
     // clang-format off
     Statement accessedStmt = getStatement(
         "UPDATE tiles "
@@ -405,7 +412,15 @@ optional<std::pair<Response, uint64_t>> OfflineDatabase::getTile(const Resource:
         size = data->length();
     }
 
-    return std::make_pair(response, size);
+  clock_gettime(CLOCK_MONOTONIC, &finish);
+  elapsed = (finish.tv_sec - start.tv_sec) + (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
+  
+  if (elapsed > .1) {
+    Log::Info(Event::Database, "getTile time %f ms ",
+             elapsed * 1000);
+  }
+
+  return std::make_pair(response, size);
 }
 
 optional<int64_t> OfflineDatabase::hasTile(const Resource::TileData& tile) {
@@ -437,6 +452,10 @@ bool OfflineDatabase::putTile(const Resource::TileData& tile,
                               const Response& response,
                               const std::string& data,
                               bool compressed) {
+  struct timespec start, finish;
+  double elapsed;
+  clock_gettime(CLOCK_MONOTONIC, &start);
+  
     if (response.notModified) {
         // clang-format off
         Statement update = getStatement(
@@ -533,8 +552,16 @@ bool OfflineDatabase::putTile(const Resource::TileData& tile,
 
     insert->run();
     transaction.commit();
-
-    return true;
+  
+  clock_gettime(CLOCK_MONOTONIC, &finish);
+  elapsed = (finish.tv_sec - start.tv_sec) +
+  (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
+  
+  if (elapsed > .1) {
+    Log::Info(Event::Database, "putTile time %f ms ",
+             elapsed * 1000);
+  }
+  return true;
 }
 
 std::vector<OfflineRegion> OfflineDatabase::listRegions() {
@@ -726,11 +753,24 @@ OfflineRegionDefinition OfflineDatabase::getRegionDefinition(int64_t regionID) {
 
 OfflineRegionStatus OfflineDatabase::getRegionCompletedStatus(int64_t regionID) {
     OfflineRegionStatus result;
-
+  struct timespec start, finish;
+  double elapsed;
+  clock_gettime(CLOCK_MONOTONIC, &start);
+  
     std::tie(result.completedResourceCount, result.completedResourceSize)
         = getCompletedResourceCountAndSize(regionID);
+
     std::tie(result.completedTileCount, result.completedTileSize)
         = getCompletedTileCountAndSize(regionID);
+  
+  clock_gettime(CLOCK_MONOTONIC, &finish);
+  elapsed = (finish.tv_sec - start.tv_sec) +
+    (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
+  
+  Log::Info(Event::Database, "getCompletedTileCountAndSize %f ms tiles %ld size %ld",
+             elapsed * 1000.0,
+            result.completedTileCount,
+            result.completedTileSize);
 
     result.completedResourceCount += result.completedTileCount;
     result.completedResourceSize += result.completedTileSize;
@@ -748,12 +788,14 @@ std::pair<int64_t, int64_t> OfflineDatabase::getCompletedResourceCountAndSize(in
     // clang-format on
     stmt->bind(1, regionID);
     stmt->run();
+
     return { stmt->get<int64_t>(0), stmt->get<int64_t>(1) };
 }
 
 std::pair<int64_t, int64_t> OfflineDatabase::getCompletedTileCountAndSize(int64_t regionID) {
     // clang-format off
-    Statement stmt = getStatement(
+
+  Statement stmt = getStatement(
         "SELECT COUNT(*), SUM(LENGTH(data)) "
         "FROM region_tiles, tiles "
         "WHERE region_id = ?1 "
@@ -761,6 +803,7 @@ std::pair<int64_t, int64_t> OfflineDatabase::getCompletedTileCountAndSize(int64_
     // clang-format on
     stmt->bind(1, regionID);
     stmt->run();
+
     return { stmt->get<int64_t>(0), stmt->get<int64_t>(1) };
 }
 
@@ -789,11 +832,38 @@ bool OfflineDatabase::checkEvict(uint64_t neededFreeSize) {
 // This is run when offline map packs are deleted and regularly when using the map.
 // Returns true if the eviction process was run.
 bool OfflineDatabase::evict() {
+  struct timespec start, finish;
+  double elapsed;
+  clock_gettime(CLOCK_MONOTONIC, &start);
+  
+  uint64_t pageSize = getPragma<int64_t>("PRAGMA page_size");
+  uint64_t pageCount = getPragma<int64_t>("PRAGMA page_count");
+  
+  auto usedSize = [&] {
+    return pageSize * (pageCount - getPragma<int64_t>("PRAGMA freelist_count"));
+  };
+  
+  // clang-format off
+  Statement tileCountStmt = getStatement(
+                                        " SELECT "
+                                        " count(*) "
+                                        "  FROM tiles "
+                                        );
+  // clang-format on
+  if (!tileCountStmt->run()) {
+    return false;
+  }
+  uint64_t totalTileCount = tileCountStmt->get<int64_t>(0);
+  if (totalTileCount == 0) return false;
+  
+  // estimate avg tile size, this will be high because it includes resource and metadata
+  // size averaged in, but that is okay because we remove resources to the same degree as tiles
+  double avgTileSize = usedSize() / totalTileCount;
+  
   // clang-format off
   Statement tileSizeStmt = getStatement(
                                            " SELECT "
-                                           " count(*), "
-                                           " SUM(length(data)) "
+                                           " count(*) "
                                            "  FROM tiles "
                                            "  LEFT JOIN region_tiles "
                                            "  ON tile_id = tiles.id "
@@ -805,35 +875,28 @@ bool OfflineDatabase::evict() {
   }
 
   uint64_t tileCount = tileSizeStmt->get<int64_t>(0);
-  uint64_t tileCacheSize = tileSizeStmt->get<int64_t>(1);
   
+
   if(tileCount == 0) {
     return false;
   }
-  
-  // clang-format off
-  Statement resourceSizeStmt = getStatement(
-                                        " SELECT "
-                                        " SUM(length(data)) "
-                                        "    FROM resources "
-                                        "    LEFT JOIN region_resources "
-                                        "    ON resource_id = resources.id "
-                                        "    WHERE resource_id IS NULL "
-                                        );
-  // clang-format on
-  if (!resourceSizeStmt->run()) {
-    return false;
-  }
-  
-  uint64_t resourceCacheSize = resourceSizeStmt->get<int64_t>(0);
-  float avgTileSize = tileCacheSize / tileCount;
 
-  if ((tileCacheSize + resourceCacheSize) < maximumCacheSize) {
+  clock_gettime(CLOCK_MONOTONIC, &finish);
+  elapsed = (finish.tv_sec - start.tv_sec) +
+  (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
+  
+  
+  Log::Info(Event::Database, "evict count tiles time %f ms ",
+             elapsed * 1000);
+  
+  uint64_t tileCacheSize = tileCount * avgTileSize;
+  if (tileCacheSize < maximumCacheSize) {
     return false;
   }
   
   // Try to purge to approximately 75% of the maximum cache size
   int64_t tilesToDelete = tileCount - (maximumCacheSize / avgTileSize) * 0.75;
+  if (tilesToDelete < 0) return false;
 
   // get accessed time to pivot deletes on
   // clang-format off
@@ -883,6 +946,13 @@ bool OfflineDatabase::evict() {
   stmt2->run();
 
   insertedSinceEvictCheck = 0;
+  clock_gettime(CLOCK_MONOTONIC, &finish);
+  elapsed = (finish.tv_sec - start.tv_sec) +
+  (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
+  
+  
+  Log::Info(Event::Database, "total evict time %f ms tilesToDelete %d",
+             elapsed * 1000, tilesToDelete);
   return true;
 }
 
