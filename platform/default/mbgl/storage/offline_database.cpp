@@ -415,7 +415,7 @@ optional<std::pair<Response, uint64_t>> OfflineDatabase::getTile(const Resource:
   clock_gettime(CLOCK_MONOTONIC, &finish);
   elapsed = (finish.tv_sec - start.tv_sec) + (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
   
-  if (elapsed > .01) {
+  if (elapsed > .1) {
     Log::Info(Event::Database, "getTile time %f ms ",
              elapsed * 1000);
   }
@@ -557,7 +557,7 @@ bool OfflineDatabase::putTile(const Resource::TileData& tile,
   elapsed = (finish.tv_sec - start.tv_sec) +
   (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
   
-  if (elapsed > .01) {
+  if (elapsed > .1) {
     Log::Info(Event::Database, "putTile time %f ms ",
              elapsed * 1000);
   }
