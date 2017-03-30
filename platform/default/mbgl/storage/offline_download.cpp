@@ -1,4 +1,5 @@
 #include <mbgl/storage/file_source.hpp>
+#include <mbgl/storage/online_file_source.hpp>
 #include <mbgl/storage/offline_database.hpp>
 #include <mbgl/storage/offline_download.hpp>
 #include <mbgl/storage/resource.hpp>
@@ -12,6 +13,8 @@
 #include <mbgl/util/run_loop.hpp>
 #include <mbgl/util/tile_cover.hpp>
 #include <mbgl/util/tileset.hpp>
+#include <mbgl/util/logging.hpp>
+#include <ctime>
 
 #include <set>
 
@@ -20,7 +23,7 @@ namespace mbgl {
 OfflineDownload::OfflineDownload(int64_t id_,
                                  OfflineRegionDefinition&& definition_,
                                  OfflineDatabase& offlineDatabase_,
-                                 FileSource& onlineFileSource_)
+                                 OnlineFileSource& onlineFileSource_)
     : id(id_),
       definition(definition_),
       offlineDatabase(offlineDatabase_),
@@ -74,6 +77,10 @@ OfflineRegionStatus OfflineDownload::getStatus() const {
         switch (type) {
         case SourceType::Vector:
         case SourceType::Raster: {
+          struct timespec start, finish;
+          double elapsed;
+          clock_gettime(CLOCK_MONOTONIC, &start);
+          
             style::TileSourceImpl* tileSource =
                 static_cast<style::TileSourceImpl*>(source->baseImpl.get());
             const variant<std::string, Tileset>& urlOrTileset = tileSource->getURLOrTileset();
@@ -94,6 +101,16 @@ OfflineRegionStatus OfflineDownload::getStatus() const {
                     result.requiredResourceCountIsPrecise = false;
                 }
             }
+          
+          clock_gettime(CLOCK_MONOTONIC, &finish);
+          elapsed = (finish.tv_sec - start.tv_sec) +
+          (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
+
+          Log::Error(Event::Database, "getTileCoverTime %f ms tiles %ld",
+                     elapsed * 1000,
+                     result.requiredResourceCount);
+          
+
             break;
         }
 
@@ -284,7 +301,7 @@ void OfflineDownload::ensureResource(const Resource& resource,
         }
 
         auto fileRequestsIt = requests.insert(requests.begin(), nullptr);
-        *fileRequestsIt = onlineFileSource.request(resource, [=](Response onlineResponse) {
+        *fileRequestsIt = onlineFileSource.request(false, resource, [=](Response onlineResponse) {
             if (onlineResponse.error) {
                 observer->responseError(*onlineResponse.error);
                 return;

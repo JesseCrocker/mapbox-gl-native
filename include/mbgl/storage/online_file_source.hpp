@@ -21,6 +21,8 @@ public:
     void setResourceTransform(ResourceTransform&& cb);
 
     std::unique_ptr<AsyncRequest> request(const Resource&, Callback) override;
+    std::unique_ptr<AsyncRequest> request(bool, const Resource&, Callback);
+
 
 private:
     friend class OnlineFileRequest;
