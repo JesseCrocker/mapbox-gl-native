@@ -348,9 +348,15 @@ bool OfflineDatabase::putResource(const Resource& resource,
 }
   
 
-
 optional<std::pair<Response, uint64_t>> OfflineDatabase::getTile(const Resource::TileData& tile) {
     // clang-format off
+  
+  /*
+   
+   struct timespec start, finish;
+   double elapsed;
+   clock_gettime(CLOCK_MONOTONIC, &start);
+   
     Statement accessedStmt = getStatement(
         "UPDATE tiles "
         "SET accessed       = ?1 "
@@ -368,7 +374,13 @@ optional<std::pair<Response, uint64_t>> OfflineDatabase::getTile(const Resource:
     accessedStmt->bind(5, tile.y);
     accessedStmt->bind(6, tile.z);
     accessedStmt->run();
-
+   
+  clock_gettime(CLOCK_MONOTONIC, &finish);
+  elapsed = (finish.tv_sec - start.tv_sec)  -  (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
+  if (elapsed > .001) {
+    Log::Info(Event::Database, "getTile set access time %f ms ", elapsed * 1000);
+  }
+   */
     // clang-format off
     Statement stmt = getStatement(
         //        0      1        2       3        4
@@ -408,6 +420,7 @@ optional<std::pair<Response, uint64_t>> OfflineDatabase::getTile(const Resource:
         response.data = std::make_shared<std::string>(*data);
         size = data->length();
     }
+
 
   return std::make_pair(response, size);
 }
