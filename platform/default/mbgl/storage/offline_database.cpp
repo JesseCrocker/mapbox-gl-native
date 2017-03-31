@@ -3,9 +3,8 @@
 #include <mbgl/util/compression.hpp>
 #include <mbgl/util/io.hpp>
 #include <mbgl/util/string.hpp>
-#include <mbgl/util/chrono.hpp>
 #include <mbgl/util/logging.hpp>
-#include <chrono>
+#include <ctime>
 #include "sqlite3.hpp"
 
 namespace mbgl {
@@ -347,12 +346,10 @@ bool OfflineDatabase::putResource(const Resource& resource,
 
     return true;
 }
+  
+
 
 optional<std::pair<Response, uint64_t>> OfflineDatabase::getTile(const Resource::TileData& tile) {
-  struct timespec start, finish;
-  double elapsed;
-  clock_gettime(CLOCK_MONOTONIC, &start);
-  
     // clang-format off
     Statement accessedStmt = getStatement(
         "UPDATE tiles "
@@ -412,14 +409,6 @@ optional<std::pair<Response, uint64_t>> OfflineDatabase::getTile(const Resource:
         size = data->length();
     }
 
-  clock_gettime(CLOCK_MONOTONIC, &finish);
-  elapsed = (finish.tv_sec - start.tv_sec) + (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
-  
-  if (elapsed > .1) {
-    Log::Info(Event::Database, "getTile time %f ms ",
-             elapsed * 1000);
-  }
-
   return std::make_pair(response, size);
 }
 
@@ -452,9 +441,6 @@ bool OfflineDatabase::putTile(const Resource::TileData& tile,
                               const Response& response,
                               const std::string& data,
                               bool compressed) {
-  struct timespec start, finish;
-  double elapsed;
-  clock_gettime(CLOCK_MONOTONIC, &start);
   
     if (response.notModified) {
         // clang-format off
@@ -553,15 +539,7 @@ bool OfflineDatabase::putTile(const Resource::TileData& tile,
     insert->run();
     transaction.commit();
   
-  clock_gettime(CLOCK_MONOTONIC, &finish);
-  elapsed = (finish.tv_sec - start.tv_sec) +
-  (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
-  
-  if (elapsed > .1) {
-    Log::Info(Event::Database, "putTile time %f ms ",
-             elapsed * 1000);
-  }
-  return true;
+    return true;
 }
 
 std::vector<OfflineRegion> OfflineDatabase::listRegions() {
@@ -753,9 +731,6 @@ OfflineRegionDefinition OfflineDatabase::getRegionDefinition(int64_t regionID) {
 
 OfflineRegionStatus OfflineDatabase::getRegionCompletedStatus(int64_t regionID) {
     OfflineRegionStatus result;
-  struct timespec start, finish;
-  double elapsed;
-  clock_gettime(CLOCK_MONOTONIC, &start);
   
     std::tie(result.completedResourceCount, result.completedResourceSize)
         = getCompletedResourceCountAndSize(regionID);
@@ -763,14 +738,9 @@ OfflineRegionStatus OfflineDatabase::getRegionCompletedStatus(int64_t regionID) 
     std::tie(result.completedTileCount, result.completedTileSize)
         = getCompletedTileCountAndSize(regionID);
   
-  clock_gettime(CLOCK_MONOTONIC, &finish);
-  elapsed = (finish.tv_sec - start.tv_sec) +
-    (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
-  
-  Log::Info(Event::Database, "getCompletedTileCountAndSize %f ms tiles %ld size %ld",
-             elapsed * 1000.0,
-            result.completedTileCount,
-            result.completedTileSize);
+    Log::Info(Event::Database, "getCompletedTileCountAndSize tiles %ld size %ld",
+              result.completedTileCount,
+              result.completedTileSize);
 
     result.completedResourceCount += result.completedTileCount;
     result.completedResourceSize += result.completedTileSize;
@@ -832,9 +802,7 @@ bool OfflineDatabase::checkEvict(uint64_t neededFreeSize) {
 // This is run when offline map packs are deleted and regularly when using the map.
 // Returns true if the eviction process was run.
 bool OfflineDatabase::evict() {
-  struct timespec start, finish;
-  double elapsed;
-  clock_gettime(CLOCK_MONOTONIC, &start);
+  time_t start = time(NULL);
   
   uint64_t pageSize = getPragma<int64_t>("PRAGMA page_size");
   uint64_t pageCount = getPragma<int64_t>("PRAGMA page_count");
@@ -880,14 +848,8 @@ bool OfflineDatabase::evict() {
   if(tileCount == 0) {
     return false;
   }
-
-  clock_gettime(CLOCK_MONOTONIC, &finish);
-  elapsed = (finish.tv_sec - start.tv_sec) +
-  (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
   
-  
-  Log::Info(Event::Database, "evict count tiles time %f ms ",
-             elapsed * 1000);
+  Log::Info(Event::Database, "evict count tiles time %f s ", time(NULL) - start);
   
   uint64_t tileCacheSize = tileCount * avgTileSize;
   if (tileCacheSize < maximumCacheSize) {
@@ -946,13 +908,8 @@ bool OfflineDatabase::evict() {
   stmt2->run();
 
   insertedSinceEvictCheck = 0;
-  clock_gettime(CLOCK_MONOTONIC, &finish);
-  elapsed = (finish.tv_sec - start.tv_sec) +
-  (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
   
-  
-  Log::Info(Event::Database, "total evict time %f ms tilesToDelete %d",
-             elapsed * 1000, tilesToDelete);
+  Log::Info(Event::Database, "total evict time %f s tilesToDelete %d", time(NULL) - start, tilesToDelete);
   return true;
 }
 
