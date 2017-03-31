@@ -27,7 +27,7 @@ class OnlineFileRequest : public AsyncRequest {
 public:
     using Callback = std::function<void (Response)>;
 
-    OnlineFileRequest(Resource, Callback, OnlineFileSource::Impl&);
+    OnlineFileRequest(bool, Resource, Callback, OnlineFileSource::Impl&);
     ~OnlineFileRequest() override;
 
     void networkIsReachableAgain();
@@ -36,6 +36,7 @@ public:
     void completed(Response);
 
     OnlineFileSource::Impl& impl;
+    bool userWaiting;
     Resource resource;
     std::unique_ptr<AsyncRequest> request;
     util::Timer timer;
@@ -98,7 +99,7 @@ public:
         assert(allRequests.find(request) != allRequests.end());
         assert(activeRequests.find(request) == activeRequests.end());
         assert(!request->request);
-
+      
         if (activeRequests.size() >= HTTPFileSource::maximumConcurrentRequests()) {
             queueRequest(request);
         } else {
@@ -107,8 +108,13 @@ public:
     }
 
     void queueRequest(OnlineFileRequest* request) {
-        auto it = pendingRequestsList.insert(pendingRequestsList.end(), request);
-        pendingRequestsMap.emplace(request, std::move(it));
+        if (request->userWaiting) {
+          auto it = pendingRequestsList.insert(pendingRequestsList.begin(), request);
+          pendingRequestsMap.emplace(request, std::move(it));
+        } else {
+          auto it = pendingRequestsList.insert(pendingRequestsList.end(), request);
+          pendingRequestsMap.emplace(request, std::move(it));
+        }
         assert(pendingRequestsMap.size() == pendingRequestsList.size());
     }
 
@@ -185,6 +191,10 @@ OnlineFileSource::OnlineFileSource()
 OnlineFileSource::~OnlineFileSource() = default;
 
 std::unique_ptr<AsyncRequest> OnlineFileSource::request(const Resource& resource, Callback callback) {
+  return OnlineFileSource::request(true, resource, callback);
+}
+  
+std::unique_ptr<AsyncRequest> OnlineFileSource::request(bool userWaiting, const Resource& resource, Callback callback) {
     Resource res = resource;
 
     switch (resource.kind) {
@@ -213,15 +223,16 @@ std::unique_ptr<AsyncRequest> OnlineFileSource::request(const Resource& resource
         break;
     }
 
-    return std::make_unique<OnlineFileRequest>(std::move(res), std::move(callback), *impl);
+    return std::make_unique<OnlineFileRequest>(userWaiting, std::move(res), std::move(callback), *impl);
 }
 
 void OnlineFileSource::setResourceTransform(ResourceTransform&& transform) {
     impl->setResourceTransform(std::move(transform));
 }
 
-OnlineFileRequest::OnlineFileRequest(Resource resource_, Callback callback_, OnlineFileSource::Impl& impl_)
+OnlineFileRequest::OnlineFileRequest(bool userWaiting_, Resource resource_, Callback callback_, OnlineFileSource::Impl& impl_)
     : impl(impl_),
+      userWaiting(userWaiting_),
       resource(std::move(resource_)),
       callback(std::move(callback_)) {
     impl.add(this);
