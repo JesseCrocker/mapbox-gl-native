@@ -49,7 +49,7 @@ public:
     template <typename Fn, class... Args>
     std::unique_ptr<AsyncRequest>
     priorityInvokeWithCallback(Fn fn, Args&&... args) {
-      return loop->invokeWithCallback(bind(fn), std::forward<Args>(args)...);
+      return loop->priorityInvokeWithCallback(bind(fn), std::forward<Args>(args)...);
     }
   
     // Invoke object->fn(args...) asynchronously, but wait for the result.
