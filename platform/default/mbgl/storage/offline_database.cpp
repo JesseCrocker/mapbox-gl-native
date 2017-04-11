@@ -802,7 +802,6 @@ bool OfflineDatabase::checkEvict(uint64_t neededFreeSize) {
 // This is run when offline map packs are deleted and regularly when using the map.
 // Returns true if the eviction process was run.
 bool OfflineDatabase::evict() {
-  time_t start = time(NULL);
   
   uint64_t pageSize = getPragma<int64_t>("PRAGMA page_size");
   uint64_t pageCount = getPragma<int64_t>("PRAGMA page_count");
@@ -813,10 +812,10 @@ bool OfflineDatabase::evict() {
   
   // clang-format off
   Statement tileCountStmt = getStatement(
-                                        " SELECT "
-                                        " count(*) "
-                                        "  FROM tiles "
-                                        );
+                                         " SELECT "
+                                         " count(*) "
+                                         "  FROM tiles "
+                                         );
   // clang-format on
   if (!tileCountStmt->run()) {
     return false;
@@ -830,26 +829,23 @@ bool OfflineDatabase::evict() {
   
   // clang-format off
   Statement tileSizeStmt = getStatement(
-                                           " SELECT "
-                                           " count(*) "
-                                           "  FROM tiles "
-                                           "  LEFT JOIN region_tiles "
-                                           "  ON tile_id = tiles.id "
-                                           "  WHERE tile_id IS NULL "
+                                        " SELECT "
+                                        " count(*) "
+                                        "  FROM tiles "
+                                        "  LEFT JOIN region_tiles "
+                                        "  ON tile_id = tiles.id "
+                                        "  WHERE tile_id IS NULL "
                                         );
   // clang-format on
   if (!tileSizeStmt->run()) {
     return false;
   }
-
+  
   uint64_t tileCount = tileSizeStmt->get<int64_t>(0);
   
-
   if(tileCount == 0) {
     return false;
   }
-  
-  Log::Info(Event::Database, "evict count tiles time %f s ", time(NULL) - start);
   
   uint64_t tileCacheSize = tileCount * avgTileSize;
   if (tileCacheSize < maximumCacheSize) {
@@ -857,26 +853,26 @@ bool OfflineDatabase::evict() {
   }
   
   // Try to purge to approximately 75% of the maximum cache size
-  int64_t tilesToDelete = tileCount - (maximumCacheSize / avgTileSize) * 0.75;
+  int64_t tilesToDelete = tileCount - (maximumCacheSize / avgTileSize) * 0.75 - 1;
   if (tilesToDelete < 0) return false;
-
+  
   // get accessed time to pivot deletes on
   // clang-format off
   Statement getPivotAccessedStmt = getStatement(
-                                            "SELECT accessed "
-                                            "  FROM tiles "
-                                            "  LEFT JOIN region_tiles "
-                                            "  ON tile_id = tiles.id "
-                                            "  WHERE tile_id IS NULL "
-                                            "ORDER BY accessed ASC "
-                                            "LIMIT 1 OFFSET ?1 "
-                                            );
+                                                "SELECT accessed "
+                                                "  FROM tiles "
+                                                "  LEFT JOIN region_tiles "
+                                                "  ON tile_id = tiles.id "
+                                                "  WHERE tile_id IS NULL "
+                                                "ORDER BY accessed ASC "
+                                                "LIMIT 1 OFFSET ?1 "
+                                                );
   // clang-format on
   getPivotAccessedStmt->bind(1, tilesToDelete);
   if (!getPivotAccessedStmt->run()) {
     return false;
   }
-
+  
   Timestamp accessed = getPivotAccessedStmt->get<Timestamp>(0);
   
   // clang-format off
@@ -906,13 +902,13 @@ bool OfflineDatabase::evict() {
   // clang-format on
   stmt2->bind(1, accessed);
   stmt2->run();
-
+  
   insertedSinceEvictCheck = 0;
   
-  Log::Info(Event::Database, "total evict time %f s tilesToDelete %d", time(NULL) - start, tilesToDelete);
+  Log::Info(Event::Database, "Evicted tiles %d", tilesToDelete);
   return true;
 }
-
+  
 void OfflineDatabase::setOfflineMapboxTileCountLimit(uint64_t limit) {
     offlineMapboxTileCountLimit = limit;
 }
@@ -954,6 +950,7 @@ uint64_t OfflineDatabase::getOfflineMapboxTileCount() {
     maximumCacheSize = cacheSize;
     if (runEviction) {
       evict();
+      db->exec("PRAGMA incremental_vacuum");
     }
   }
   
