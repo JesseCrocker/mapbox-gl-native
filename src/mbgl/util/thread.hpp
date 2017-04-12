@@ -46,6 +46,12 @@ public:
         return loop->invokeWithCallback(bind(fn), std::forward<Args>(args)...);
     }
 
+    template <typename Fn, class... Args>
+    std::unique_ptr<AsyncRequest>
+    priorityInvokeWithCallback(Fn fn, Args&&... args) {
+      return loop->priorityInvokeWithCallback(bind(fn), std::forward<Args>(args)...);
+    }
+  
     // Invoke object->fn(args...) asynchronously, but wait for the result.
     template <typename Fn, class... Args>
     auto invokeSync(Fn fn, Args&&... args) {

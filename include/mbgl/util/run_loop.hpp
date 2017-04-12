@@ -71,6 +71,14 @@ public:
         push(task);
         return std::make_unique<WorkRequest>(task);
     }
+    
+    template <class Fn, class... Args>
+    std::unique_ptr<AsyncRequest>
+    priorityInvokeWithCallback(Fn&& fn, Args&&... args) {
+      std::shared_ptr<WorkTask> task = WorkTask::makeWithCallback(std::forward<Fn>(fn), std::forward<Args>(args)...);
+      push_front(task);
+      return std::make_unique<WorkRequest>(task);
+    }
 
     class Impl;
 
@@ -80,6 +88,8 @@ private:
     using Queue = std::queue<std::shared_ptr<WorkTask>>;
 
     void push(std::shared_ptr<WorkTask>);
+                  void push_front(std::shared_ptr<WorkTask>);
+
 
     void schedule(std::weak_ptr<Mailbox> mailbox) override {
         invoke([mailbox] () {
@@ -96,13 +106,22 @@ private:
         Queue queue_;
         withMutex([&] { queue_.swap(queue); });
 
-        while (!queue_.empty()) {
+        Queue priorityQueue_;
+        withMutex([&] { priorityQueue_.swap(priorityQueue); });
+
+        while (!queue_.empty() || !priorityQueue_.empty()) {
+          if (!priorityQueue_.empty()) {
+            (*(priorityQueue_.front()))();
+            priorityQueue_.pop();
+          } else {
             (*(queue_.front()))();
             queue_.pop();
+          }
         }
     }
 
     Queue queue;
+    Queue priorityQueue;
     std::mutex mutex;
 
     std::unique_ptr<Impl> impl;
