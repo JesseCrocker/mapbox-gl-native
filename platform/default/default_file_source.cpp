@@ -144,6 +144,10 @@ public:
         offlineDatabase.setOfflineMapboxTileCountLimit(limit);
     }
 
+    void setMaximumCacheSize(uint64_t cacheSize) {
+      offlineDatabase.setMaximumCacheSize(cacheSize);
+    }
+  
     void put(const Resource& resource, const Response& response) {
         offlineDatabase.put(resource, response);
     }
@@ -261,6 +265,10 @@ void DefaultFileSource::getOfflineRegionStatus(OfflineRegion& region, std::funct
 
 void DefaultFileSource::setOfflineMapboxTileCountLimit(uint64_t limit) const {
     thread->invokeSync(&Impl::setOfflineMapboxTileCountLimit, limit);
+}
+  
+void DefaultFileSource::setMaximumCacheSize(uint64_t cacheSize) const {
+  thread->invokeSync(&Impl::setMaximumCacheSize, cacheSize);
 }
 
 void DefaultFileSource::pause() {
