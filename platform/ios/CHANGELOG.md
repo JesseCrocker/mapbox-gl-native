@@ -85,6 +85,7 @@ Mapbox welcomes participation and contributions from everyone. Please read [CONT
 * Fixed an issue that could prevent a style from loading when reestablishing a network connection. ([#7902](https://github.com/mapbox/mapbox-gl-native/pull/7902))
 * `MGLOfflineStorage` instances now support a delegate conforming to `MGLOfflineStorageDelegate`, which allows altering URLs before they are requested from the internet. ([#8084](https://github.com/mapbox/mapbox-gl-native/pull/8084))
 * Added function to set the maximum cache size of `MGLOfflineStorage`
+* Changed the eviction strategy. The entire maximumCacheSize is now available for ambiently cached items.
 
 ### Other changes
 
