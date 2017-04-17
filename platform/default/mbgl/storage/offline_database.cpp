@@ -936,7 +936,7 @@ uint64_t OfflineDatabase::getOfflineMapboxTileCount() {
     bool runEviction = cacheSize < maximumCacheSize;
     maximumCacheSize = cacheSize;
     if (runEviction) {
-      evict(0);
+      evict();
     }
   }
   
