@@ -180,7 +180,7 @@ DefaultFileSource::DefaultFileSource(const std::string& cachePath,
                                      uint64_t maximumCacheSize)
     : thread(std::make_unique<util::Thread<Impl>>(util::ThreadContext{"DefaultFileSource", util::ThreadPriority::Low},
             cachePath, maximumCacheSize)),
-      priorityThread(std::make_unique<util::Thread<Impl>>(util::ThreadContext{"PriorityDefaultFileSource", util::ThreadPriority::Low}, cachePath, maximumCacheSize)),
+      priorityThread(std::make_unique<util::Thread<Impl>>(util::ThreadContext{"PriorityDefaultFileSource", util::ThreadPriority::Regular}, cachePath, maximumCacheSize)),
       assetFileSource(std::make_unique<AssetFileSource>(assetRoot)),
       localFileSource(std::make_unique<LocalFileSource>()) {
       
