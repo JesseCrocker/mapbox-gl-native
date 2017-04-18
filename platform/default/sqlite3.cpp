@@ -90,6 +90,7 @@ const static bool sqliteVersionCheck __attribute__((unused)) = []() {
 
     // Enable SQLite logging before initializing the database.
     sqlite3_config(SQLITE_CONFIG_LOG, errorLogCallback, nullptr);
+    sqlite3_config(SQLITE_CONFIG_MULTITHREAD, errorLogCallback, nullptr);
 
     return true;
 }();
