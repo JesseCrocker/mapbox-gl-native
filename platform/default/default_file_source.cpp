@@ -24,8 +24,12 @@ bool isAssetURL(const std::string& url) {
 
 namespace mbgl {
 
+DefaultFileSource * global_ptr = 0;
+
+
 class DefaultFileSource::Impl {
 public:
+
     Impl(const std::string& cachePath, uint64_t maximumCacheSize)
         : offlineDatabase(cachePath, maximumCacheSize) {
     }
@@ -130,8 +134,11 @@ public:
 
         if (resource.necessity == Resource::Required) {
             tasks[req] = onlineFileSource.request(revalidation, [=] (Response onlineResponse) {
-                this->offlineDatabase.put(revalidation, onlineResponse);
-                callback(onlineResponse);
+              // save the tile data to the database on the non priority thread
+              global_ptr->thread->invoke(&Impl::put, revalidation, onlineResponse);
+              //this->offlineDatabase.put(revalidation, onlineResponse);
+            
+              callback(onlineResponse);
             });
         }
     }
@@ -173,14 +180,21 @@ DefaultFileSource::DefaultFileSource(const std::string& cachePath,
                                      uint64_t maximumCacheSize)
     : thread(std::make_unique<util::Thread<Impl>>(util::ThreadContext{"DefaultFileSource", util::ThreadPriority::Low},
             cachePath, maximumCacheSize)),
+      priorityThread(std::make_unique<util::Thread<Impl>>(util::ThreadContext{"PriorityDefaultFileSource", util::ThreadPriority::Regular}, cachePath, maximumCacheSize)),
       assetFileSource(std::make_unique<AssetFileSource>(assetRoot)),
       localFileSource(std::make_unique<LocalFileSource>()) {
+      
+      // make a global variable for this object so the priorityThread can find the regular thread to send work to.
+      // I couldn't figure out the syntax to just pass the regular thread to the priorityThread
+      global_ptr = this;
 }
 
 DefaultFileSource::~DefaultFileSource() = default;
 
 void DefaultFileSource::setAPIBaseURL(const std::string& baseURL) {
     thread->invoke(&Impl::setAPIBaseURL, baseURL);
+    priorityThread->invoke(&Impl::setAPIBaseURL, baseURL);
+
     cachedBaseURL = baseURL;
 }
 
@@ -190,6 +204,8 @@ std::string DefaultFileSource::getAPIBaseURL() const {
 
 void DefaultFileSource::setAccessToken(const std::string& accessToken) {
     thread->invoke(&Impl::setAccessToken, accessToken);
+    priorityThread->invoke(&Impl::setAccessToken, accessToken);
+
     cachedAccessToken = accessToken;
 }
 
@@ -204,6 +220,13 @@ void DefaultFileSource::setResourceTransform(std::function<std::string(Resource:
             callback(transform(kind, std::move(url)));
         }, kind_, std::move(url_), callback_);
     });
+  
+  // this sets the delegate for MGLOfflineStorage that changes the url
+  priorityThread->invoke(&Impl::setResourceTransform, [loop, transform](Resource::Kind kind_, std::string&& url_, auto callback_) {
+    return loop->invokeWithCallback([transform](Resource::Kind kind, std::string&& url, auto callback) {
+      callback(transform(kind, std::move(url)));
+    }, kind_, std::move(url_), callback_);
+  });
 }
 
 std::unique_ptr<AsyncRequest> DefaultFileSource::request(const Resource& resource, Callback callback) {
@@ -227,7 +250,7 @@ std::unique_ptr<AsyncRequest> DefaultFileSource::request(const Resource& resourc
     } else if (LocalFileSource::acceptsURL(resource.url)) {
         return localFileSource->request(resource, callback);
     } else {
-        return std::make_unique<DefaultFileRequest>(resource, callback, *thread);
+        return std::make_unique<DefaultFileRequest>(resource, callback, *priorityThread);
     }
 }
 
@@ -273,10 +296,12 @@ void DefaultFileSource::setMaximumCacheSize(uint64_t cacheSize) const {
 
 void DefaultFileSource::pause() {
     thread->pause();
+    priorityThread->pause();
 }
 
 void DefaultFileSource::resume() {
     thread->resume();
+    priorityThread->resume();
 }
 
 // For testing only:

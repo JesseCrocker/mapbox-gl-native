@@ -33,7 +33,7 @@ public:
     // If the task has completed and the after callback has executed, this will
     // do nothing.
     void cancel() override {
-        std::lock_guard<std::recursive_mutex> lock(mutex);
+        //std::lock_guard<std::recursive_mutex> lock(mutex);
         *canceled = true;
     }
 
