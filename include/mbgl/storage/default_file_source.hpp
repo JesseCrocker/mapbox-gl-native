@@ -141,8 +141,11 @@ public:
 
     class Impl;
 
-private:
     const std::unique_ptr<util::Thread<Impl>> thread;
+
+private:
+    const std::unique_ptr<util::Thread<Impl>> priorityThread;
+
     const std::unique_ptr<FileSource> assetFileSource;
     const std::unique_ptr<FileSource> localFileSource;
     std::string cachedBaseURL = mbgl::util::API_BASE_URL;
