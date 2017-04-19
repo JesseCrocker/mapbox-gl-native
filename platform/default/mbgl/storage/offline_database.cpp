@@ -937,6 +937,7 @@ uint64_t OfflineDatabase::getOfflineMapboxTileCount() {
     maximumCacheSize = cacheSize;
     if (runEviction) {
       evict();
+      db->exec("PRAGMA incremental_vacuum");
     }
   }
   
