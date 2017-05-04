@@ -2,6 +2,7 @@
 
 #import "MGLFoundation.h"
 #import "MGLTypes.h"
+#import "MGLTileID.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -169,6 +170,7 @@ MGL_EXPORT
  Returns the shared offline storage object.
  */
 + (instancetype)sharedOfflineStorage;
+- (NSData* _Nullable) fetchTile:(MGLTileID) tileId pixelRatio:(int) pixelRatio template:(NSString*) templateURL;
 
 #pragma mark - Accessing the Delegate
 
