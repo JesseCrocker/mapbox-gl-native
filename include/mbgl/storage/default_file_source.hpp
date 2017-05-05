@@ -131,6 +131,8 @@ public:
      */
     void resume();
   
+    optional<Response> fetchTile(int x, int y, int z, int pixel_ratio, const std::string& urlTemplate);
+
     /*
      * Sets the size of the ambient offline cache of tiles
      */

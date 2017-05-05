@@ -108,6 +108,23 @@ public:
         getDownload(regionID).setState(state);
     }
 
+    void simpleRequest(Resource resource, optional<Response> * response) {
+      Resource revalidation = resource;
+      auto offlineResponse = offlineDatabase.get(resource);
+      
+      if (!offlineResponse) {
+        // Ensure there's always a response that we can send, so the caller knows that
+        // there's no optional data available in the cache.
+        offlineResponse.emplace();
+        offlineResponse->noContent = true;
+        offlineResponse->error = std::make_unique<Response::Error>(
+                                                                   Response::Error::Reason::NotFound, "Not found in offline database");
+      }
+      *response = std::move(offlineResponse);
+    }
+  
+
+  
     void request(AsyncRequest* req, Resource resource, Callback callback) {
         Resource revalidation = resource;
 
@@ -304,10 +321,19 @@ void DefaultFileSource::resume() {
     priorityThread->resume();
 }
 
+optional<Response> DefaultFileSource::fetchTile(int x, int y, int z, int pixel_ratio, const std::string& urlTemplate) {
+ 
+  Resource resource = Resource::tile(urlTemplate, pixel_ratio, x, y, z, Tileset::Scheme::XYZ, Resource::Necessity::Optional);
+  optional<Response> response;
+  thread->invokeSync(&Impl::simpleRequest, resource, &response);
+
+  return response;
+  
+}
 // For testing only:
 
 void DefaultFileSource::put(const Resource& resource, const Response& response) {
-    thread->invokeSync(&Impl::put, resource, response);
+    priorityThread->invokeSync(&Impl::put, resource, response);
 }
 
 } // namespace mbgl
