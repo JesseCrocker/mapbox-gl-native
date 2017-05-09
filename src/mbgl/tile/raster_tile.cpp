@@ -41,7 +41,7 @@ void RasterTile::setData(std::shared_ptr<const std::string> data,
 
 void RasterTile::onParsed(std::unique_ptr<Bucket> result) {
     bucket = std::move(result);
-    availableData = bucket ? DataAvailability::All : DataAvailability::None;
+    availableData = bucket ? DataAvailability::All : DataAvailability::Never;
     observer->onTileChanged(*this);
 }
 
