@@ -333,7 +333,7 @@ optional<Response> DefaultFileSource::fetchTile(int x, int y, int z, int pixel_r
 // For testing only:
 
 void DefaultFileSource::put(const Resource& resource, const Response& response) {
-    thread->invokeSync(&Impl::put, resource, response);
+    priorityThread->invokeSync(&Impl::put, resource, response);
 }
 
 } // namespace mbgl
