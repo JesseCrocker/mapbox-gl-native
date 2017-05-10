@@ -103,12 +103,15 @@
         _requestQueue = [[NSOperationQueue alloc] init];
         self.requestQueue.name = [NSString stringWithFormat:@"mgl.MGLComputedShapeSource.%@", identifier];
         auto geoJSONOptions = MGLGeoJSONOptionsFromDictionary(options);
+
+        __weak MGLComputedShapeSource * welf = self;
+
         auto source = std::make_unique<mbgl::style::CustomVectorSource>
         (self.identifier.UTF8String, geoJSONOptions,
          ^void(const mbgl::CanonicalTileID& tileID)
          {
-             NSOperation *operation = [[MGLComputedShapeSourceFetchOperation alloc] initForSource:self tile:tileID];
-             [self.requestQueue addOperation:operation];
+             NSOperation *operation = [[MGLComputedShapeSourceFetchOperation alloc] initForSource:welf tile:tileID];
+             [welf.requestQueue addOperation:operation];
          });
         
         _pendingSource = std::move(source);
