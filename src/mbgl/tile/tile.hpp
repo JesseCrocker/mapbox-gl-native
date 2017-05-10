@@ -78,7 +78,7 @@ public:
     }
 
     bool isComplete() const {
-        return availableData == DataAvailability::All;
+      return availableData == DataAvailability::All || availableData == DataAvailability::Never;
     }
 
     void dumpDebugLogs() const;
@@ -104,6 +104,9 @@ protected:
 
         // Tile is fully parsed, and all buckets are available if they exist.
         All,
+      
+        // Data is never coming
+        Never
     };
 
     DataAvailability availableData = DataAvailability::None;
