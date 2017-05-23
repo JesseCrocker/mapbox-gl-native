@@ -312,12 +312,12 @@ void DefaultFileSource::setMaximumCacheSize(uint64_t cacheSize) const {
 }
 
 void DefaultFileSource::pause() {
-    thread->pause();
+    //thread->pause();
     priorityThread->pause();
 }
 
 void DefaultFileSource::resume() {
-    thread->resume();
+    //thread->resume();
     priorityThread->resume();
 }
 

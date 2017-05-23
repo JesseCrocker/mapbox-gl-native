@@ -877,7 +877,8 @@ bool OfflineDatabase::evict() {
   stmt1->run();
   
   // clang-format off
-  Statement stmt2 = getStatement(
+  while (true) {
+    Statement stmt2 = getStatement(
                                  "DELETE FROM tiles "
                                  "WHERE id IN ( "
                                  "  SELECT id FROM tiles "
@@ -885,11 +886,18 @@ bool OfflineDatabase::evict() {
                                  "  ON tile_id = tiles.id "
                                  "  WHERE tile_id IS NULL "
                                  "  AND accessed <= ?1 "
-                                 ") ");
-  // clang-format on
-  stmt2->bind(1, accessed);
-  stmt2->run();
+                                 ") LIMIT 10000");
   
+    // clang-format on
+    stmt2->bind(1, accessed);
+    stmt2->run();
+    Log::Info(Event::Database, "deleted tiles %d", stmt2->changes());
+
+    if (stmt2->changes() < 10000) {
+      break;
+    }
+
+  }
   insertedSinceEvictCheck = 0;
   
   Log::Info(Event::Database, "Evicted tiles %d", tilesToDelete);
