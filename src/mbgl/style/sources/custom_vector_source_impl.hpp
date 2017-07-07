@@ -16,18 +16,17 @@ public:
          std::function<void(const CanonicalTileID&)> fetchTile);
     ~Impl() final;
   
-//    void loadDescription(FileSource&) final {}
-    void setTileData(const CanonicalTileID& tileID, const mapbox::geojson::geojson&);
-    void reloadTile(const CanonicalTileID& tileID);
-    void reloadRegion(mbgl::LatLngBounds bounds, uint8_t z);
-    void reload();
+    void setTileData(const CanonicalTileID& tileID, const mapbox::geojson::geojson&) const;
+    void reloadTile(const CanonicalTileID& tileID) const;
+    void reloadRegion(mbgl::LatLngBounds bounds, uint8_t z) const;
+    void reload() const;
 
     optional<std::string> getAttribution() const final;
 
 private:
     uint16_t getTileSize() const;
     Range<uint8_t> getZoomRange() const;
-    std::unique_ptr<Tile> createTile(const OverscaledTileID&, const UpdateParameters&);
+//    std::unique_ptr<Tile> createTile(const OverscaledTileID&, const UpdateParameters&);
     GeoJSONOptions options;
     std::function<void(const CanonicalTileID&)> fetchTile;
 };

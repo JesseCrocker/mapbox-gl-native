@@ -13,11 +13,10 @@
 #include <mbgl/util/geojson.hpp>
 
 @interface MGLComputedShapeSource () {
-    std::unique_ptr<mbgl::style::CustomVectorSource> _pendingSource;
 }
 
 @property (nonatomic, readwrite) NSDictionary *options;
-@property (nonnull) mbgl::style::CustomVectorSource *rawSource;
+@property (nonatomic, readonly) mbgl::style::CustomVectorSource *rawSource;
 @property (nonatomic, assign) BOOL dataSourceImplementsFeaturesForTile;
 @property (nonatomic, assign) BOOL dataSourceImplementsFeaturesForBounds;
 
@@ -97,20 +96,18 @@
 @implementation MGLComputedShapeSource
 
 - (instancetype)initWithIdentifier:(NSString *)identifier options:(NS_DICTIONARY_OF(MGLShapeSourceOption, id) *)options {
-    if (self = [super initWithIdentifier:identifier]) {
+    auto geoJSONOptions = MGLGeoJSONOptionsFromDictionary(options);
+    auto source = std::make_unique<mbgl::style::CustomVectorSource>
+    (identifier.UTF8String, geoJSONOptions,
+     ^void(const mbgl::CanonicalTileID& tileID)
+     {
+         NSOperation *operation = [[MGLComputedShapeSourceFetchOperation alloc] initForSource:self tile:tileID];
+         [self.requestQueue addOperation:operation];
+     });
+
+    if (self = [super initWithPendingSource:std::move(source)]) {
         _requestQueue = [[NSOperationQueue alloc] init];
         self.requestQueue.name = [NSString stringWithFormat:@"mgl.MGLComputedShapeSource.%@", identifier];
-        auto geoJSONOptions = MGLGeoJSONOptionsFromDictionary(options);
-/*        auto source = std::make_unique<mbgl::style::CustomVectorSource>
-        (self.identifier.UTF8String, geoJSONOptions,
-         ^void(const mbgl::CanonicalTileID& tileID)
-         {
-             NSOperation *operation = [[MGLComputedShapeSourceFetchOperation alloc] initForSource:self tile:tileID];
-             [self.requestQueue addOperation:operation];
-         });
-
-        _pendingSource = std::move(source);
-        self.rawSource = _pendingSource.get();*/
     }
     return self;
 }
@@ -133,6 +130,11 @@
 
     _dataSource = dataSource;
 }
+
+- (mbgl::style::CustomVectorSource *)rawSource {
+    return (mbgl::style::CustomVectorSource *)super.rawSource;
+}
+
 
 - (void)reloadTileInCoordinateBounds:(MGLCoordinateBounds)bounds zoomLevel:(NSUInteger)zoomLevel {
     self.rawSource->reloadRegion(MGLLatLngBoundsFromCoordinateBounds(bounds), (uint8_t)zoomLevel);

@@ -10,8 +10,8 @@ namespace style {
 
 class CustomVectorSource : public Source {
 public:
-    CustomVectorSource(std::string& id,
-                       const GeoJSONOptions options,
+    CustomVectorSource(const std::string& id,
+                       const GeoJSONOptions& options,
                        std::function<void(const CanonicalTileID&)> fetchTile);
     ~CustomVectorSource() final;
   
@@ -19,12 +19,12 @@ public:
     void reloadTile(const CanonicalTileID&);
     void reloadRegion(mbgl::LatLngBounds bounds, uint8_t z);
     void reload();
-    void loadDescription(FileSource&) final;
+    void loadDescription(FileSource&) final {}
 
     // Private implementation
 
-    class Impl;
-    Impl& impl();
+  class Impl;
+  const Impl& impl() const;
 };
 
 template <>

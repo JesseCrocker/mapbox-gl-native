@@ -4,14 +4,18 @@
 namespace mbgl {
 namespace style {
 
-CustomVectorSource::CustomVectorSource(std::string& id,
-                                       const GeoJSONOptions options,
+CustomVectorSource::CustomVectorSource(const std::string& id,
+                                       const GeoJSONOptions& options,
                                        std::function<void(const CanonicalTileID&)> fetchTile)
     : Source(makeMutable<Impl>(std::move(id), options, fetchTile)) {
 }
 
 CustomVectorSource::~CustomVectorSource() = default;
-    
+  
+const CustomVectorSource::Impl& CustomVectorSource::impl() const {
+    return static_cast<const Impl&>(*baseImpl);
+}
+
 void CustomVectorSource::setTileData(const CanonicalTileID& tileId,
                                      const mapbox::geojson::geojson& geoJSON) {
     impl().setTileData(tileId, geoJSON);
@@ -28,8 +32,6 @@ void CustomVectorSource::reloadTile(const CanonicalTileID& tileId) {
 void CustomVectorSource::reload() {
     impl().reload();
 }
-
-void GeoJSONSource::loadDescription(FileSource&) {}
-    
+  
 } // namespace style
 } // namespace mbgl

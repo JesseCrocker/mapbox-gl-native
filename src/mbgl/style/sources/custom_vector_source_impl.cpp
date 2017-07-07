@@ -4,6 +4,7 @@
 #include <mbgl/tile/geojson_tile.hpp>
 #include <mbgl/tile/vector_tile.hpp>
 #include <mbgl/util/tile_cover.hpp>
+#include <mbgl/renderer/tile_parameters.hpp>
 
 #include <mapbox/geojsonvt.hpp>
 #include <supercluster.hpp>
@@ -29,15 +30,15 @@ uint16_t CustomVectorSource::Impl::getTileSize() const {
     return options.tileSize;
 }
   
-std::unique_ptr<Tile> CustomVectorSource::Impl::createTile(const OverscaledTileID& tileID,
-                                                           const UpdateParameters& parameters) {
-    auto tilePointer = std::make_unique<GeoJSONTile>(tileID, id, parameters);
-    fetchTile(tileID.canonical);
-    return std::move(tilePointer);
-}
+//std::unique_ptr<Tile> CustomVectorSource::Impl::createTile(const OverscaledTileID& tileID,
+//                                                           const UpdateParameters& parameters) {
+//    auto tilePointer = std::make_unique<GeoJSONTile>(tileID, "", parameters);
+//    fetchTile(tileID.canonical);
+//    return std::move(tilePointer);
+//}
 
 void CustomVectorSource::Impl::setTileData(const CanonicalTileID& /*tileID*/,
-                                           const mapbox::geojson::geojson& /*geoJSON*/) {
+                                           const mapbox::geojson::geojson& /*geoJSON*/) const {
 /*    constexpr double scale = util::EXTENT / util::tileSize;
 
     if (geoJSON.is<FeatureCollection>() && geoJSON.get<FeatureCollection>().empty()) {
@@ -85,7 +86,7 @@ void CustomVectorSource::Impl::setTileData(const CanonicalTileID& /*tileID*/,
     }*/
 }
 
-void CustomVectorSource::Impl::reloadTile(const CanonicalTileID& /*tileId*/) {
+void CustomVectorSource::Impl::reloadTile(const CanonicalTileID& /*tileId*/) const {
 //    if (cache.has(OverscaledTileID(tileId.z, tileId.x, tileId.y))) {
 //        cache.clear();
 //    }
@@ -97,13 +98,13 @@ void CustomVectorSource::Impl::reloadTile(const CanonicalTileID& /*tileId*/) {
 //    }
 }
 
-void CustomVectorSource::Impl::reloadRegion(mbgl::LatLngBounds bounds, const uint8_t z) {
+void CustomVectorSource::Impl::reloadRegion(mbgl::LatLngBounds bounds, const uint8_t z) const {
     for (const auto& tile : mbgl::util::tileCover(bounds, z)) {
         reloadTile(tile.canonical);
     }
 }
 
-void CustomVectorSource::Impl::reload() {
+void CustomVectorSource::Impl::reload() const {
 /*    cache.clear();
     for (auto const& item : tiles) {
         GeoJSONTile* tile = static_cast<GeoJSONTile*>(item.second.get());
