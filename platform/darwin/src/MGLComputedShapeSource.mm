@@ -101,7 +101,7 @@
         _requestQueue = [[NSOperationQueue alloc] init];
         self.requestQueue.name = [NSString stringWithFormat:@"mgl.MGLComputedShapeSource.%@", identifier];
         auto geoJSONOptions = MGLGeoJSONOptionsFromDictionary(options);
-        auto source = std::make_unique<mbgl::style::CustomVectorSource>
+/*        auto source = std::make_unique<mbgl::style::CustomVectorSource>
         (self.identifier.UTF8String, geoJSONOptions,
          ^void(const mbgl::CanonicalTileID& tileID)
          {
@@ -110,7 +110,7 @@
          });
 
         _pendingSource = std::move(source);
-        self.rawSource = _pendingSource.get();
+        self.rawSource = _pendingSource.get();*/
     }
     return self;
 }
@@ -132,35 +132,6 @@
     }
 
     _dataSource = dataSource;
-}
-
-- (void)addToMapView:(MGLMapView *)mapView {
-    if (_pendingSource == nullptr) {
-        [NSException raise:@"MGLRedundantSourceException"
-                    format:@"This instance %@ was already added to %@. Adding the same source instance " \
-         "to the style more than once is invalid.", self, mapView.style];
-    }
-
-    mapView.mbglMap->addSource(std::move(_pendingSource));
-}
-
-- (void)removeFromMapView:(MGLMapView *)mapView {
-    [self.requestQueue cancelAllOperations];
-    if (self.rawSource != mapView.mbglMap->getSource(self.identifier.UTF8String)) {
-        return;
-    }
-
-    auto removedSource = mapView.mbglMap->removeSource(self.identifier.UTF8String);
-
-    mbgl::style::CustomVectorSource *source = dynamic_cast<mbgl::style::CustomVectorSource *>(removedSource.get());
-    if (!source) {
-        return;
-    }
-
-    removedSource.release();
-
-    _pendingSource = std::unique_ptr<mbgl::style::CustomVectorSource>(source);
-    self.rawSource = _pendingSource.get();
 }
 
 - (void)reloadTileInCoordinateBounds:(MGLCoordinateBounds)bounds zoomLevel:(NSUInteger)zoomLevel {

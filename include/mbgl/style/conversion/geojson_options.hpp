@@ -19,7 +19,8 @@ struct Converter<GeoJSONOptions> {
             if (toNumber(*minzoomValue)) {
                 options.minzoom = static_cast<uint8_t>(*toNumber(*minzoomValue));
             } else {
-                return Error{ "GeoJSON source minzoom value must be a number" };
+                error = Error{ "GeoJSON source minzoom value must be a number" };
+                return {};
             }
         }
 

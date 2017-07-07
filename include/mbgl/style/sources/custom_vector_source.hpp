@@ -10,24 +10,26 @@ namespace style {
 
 class CustomVectorSource : public Source {
 public:
-    CustomVectorSource(std::string id,
-                       GeoJSONOptions options,
+    CustomVectorSource(std::string& id,
+                       const GeoJSONOptions options,
                        std::function<void(const CanonicalTileID&)> fetchTile);
-
+    ~CustomVectorSource() final;
+  
     void setTileData(const CanonicalTileID&, const mapbox::geojson::geojson&);
     void reloadTile(const CanonicalTileID&);
     void reloadRegion(mbgl::LatLngBounds bounds, uint8_t z);
     void reload();
+    void loadDescription(FileSource&) final;
 
     // Private implementation
 
     class Impl;
-    Impl* const impl;
+    Impl& impl();
 };
 
 template <>
 inline bool Source::is<CustomVectorSource>() const {
-    return type == SourceType::Vector;
+    return getType() == SourceType::GeoJSON;
 }
 
 } // namespace style

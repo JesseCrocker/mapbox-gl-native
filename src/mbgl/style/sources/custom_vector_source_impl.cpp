@@ -12,14 +12,14 @@ namespace mbgl {
 namespace style {
 
 CustomVectorSource::Impl::Impl(std::string id_,
-                               Source& base_,
                                const GeoJSONOptions options_,
                                std::function<void(const CanonicalTileID&)> fetchTile_)
-    : Source::Impl(SourceType::Vector, std::move(id_), base_),
+    : Source::Impl(SourceType::Vector, std::move(id_)),
       options(options_),
       fetchTile(fetchTile_) {
-    loaded = true;
 }
+
+CustomVectorSource::Impl::~Impl() = default;
 
 Range<uint8_t> CustomVectorSource::Impl::getZoomRange() const {
     return { options.minzoom, options.maxzoom };
@@ -28,17 +28,17 @@ Range<uint8_t> CustomVectorSource::Impl::getZoomRange() const {
 uint16_t CustomVectorSource::Impl::getTileSize() const {
     return options.tileSize;
 }
-
+  
 std::unique_ptr<Tile> CustomVectorSource::Impl::createTile(const OverscaledTileID& tileID,
                                                            const UpdateParameters& parameters) {
-    auto tilePointer = std::make_unique<GeoJSONTile>(tileID, base.getID(), parameters);
+    auto tilePointer = std::make_unique<GeoJSONTile>(tileID, id, parameters);
     fetchTile(tileID.canonical);
     return std::move(tilePointer);
 }
 
-void CustomVectorSource::Impl::setTileData(const CanonicalTileID& tileID,
-                                           const mapbox::geojson::geojson& geoJSON) {
-    constexpr double scale = util::EXTENT / util::tileSize;
+void CustomVectorSource::Impl::setTileData(const CanonicalTileID& /*tileID*/,
+                                           const mapbox::geojson::geojson& /*geoJSON*/) {
+/*    constexpr double scale = util::EXTENT / util::tileSize;
 
     if (geoJSON.is<FeatureCollection>() && geoJSON.get<FeatureCollection>().empty()) {
         for (auto const& item : tiles) {
@@ -82,19 +82,19 @@ void CustomVectorSource::Impl::setTileData(const CanonicalTileID& tileID,
                 }
             }
         }
-    }
+    }*/
 }
 
-void CustomVectorSource::Impl::reloadTile(const CanonicalTileID& tileId) {
-    if (cache.has(OverscaledTileID(tileId.z, tileId.x, tileId.y))) {
-        cache.clear();
-    }
-    for (auto const& item : tiles) {
-        GeoJSONTile* tile = static_cast<GeoJSONTile*>(item.second.get());
-        if (tile->id.canonical == tileId) {
-            fetchTile(tileId);
-        }
-    }
+void CustomVectorSource::Impl::reloadTile(const CanonicalTileID& /*tileId*/) {
+//    if (cache.has(OverscaledTileID(tileId.z, tileId.x, tileId.y))) {
+//        cache.clear();
+//    }
+//    for (auto const& item : tiles) {
+//        GeoJSONTile* tile = static_cast<GeoJSONTile*>(item.second.get());
+//        if (tile->id.canonical == tileId) {
+//            fetchTile(tileId);
+//        }
+//    }
 }
 
 void CustomVectorSource::Impl::reloadRegion(mbgl::LatLngBounds bounds, const uint8_t z) {
@@ -104,11 +104,16 @@ void CustomVectorSource::Impl::reloadRegion(mbgl::LatLngBounds bounds, const uin
 }
 
 void CustomVectorSource::Impl::reload() {
-    cache.clear();
+/*    cache.clear();
     for (auto const& item : tiles) {
         GeoJSONTile* tile = static_cast<GeoJSONTile*>(item.second.get());
         fetchTile(tile->id.canonical);
     }
+ */
+}
+
+optional<std::string> CustomVectorSource::Impl::getAttribution() const {
+    return {};
 }
 
 } // namespace style
