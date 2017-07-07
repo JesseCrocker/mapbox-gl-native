@@ -41,6 +41,7 @@ macro(mbgl_platform_core)
         PRIVATE platform/darwin/src/nsthread.mm
         PRIVATE platform/darwin/src/string_nsstring.mm
         PRIVATE platform/default/bidi.cpp
+        PRIVATE platform/default/thread_local.cpp
         PRIVATE platform/default/utf.cpp
 
         # Image handling
@@ -65,7 +66,7 @@ macro(mbgl_platform_core)
     )
 
     target_add_mason_package(mbgl-core PUBLIC geojson)
-    target_add_mason_package(mbgl-core PUBLIC icu)
+    target_add_mason_package(mbgl-core PRIVATE icu)
 
     target_compile_options(mbgl-core
         PRIVATE -fobjc-arc
@@ -84,6 +85,13 @@ macro(mbgl_platform_core)
     )
 
     target_link_libraries(mbgl-core
-        PUBLIC -lz
+        PUBLIC "-lz"
+        PUBLIC "-framework Foundation"
+        PUBLIC "-framework CoreGraphics"
+        PUBLIC "-framework OpenGLES"
+        PUBLIC "-framework ImageIO"
+        PUBLIC "-framework MobileCoreServices"
+        PUBLIC "-framework SystemConfiguration"
+        PUBLIC "-lsqlite3"
     )
 endmacro()

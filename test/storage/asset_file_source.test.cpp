@@ -3,45 +3,30 @@
 #include <mbgl/util/chrono.hpp>
 #include <mbgl/util/run_loop.hpp>
 #include <mbgl/util/thread.hpp>
+#include <mbgl/actor/actor_ref.hpp>
 
 #include <gtest/gtest.h>
-
-namespace {
-
-std::string getFileSourceRoot() {
-#ifdef MBGL_ASSET_ZIP
-    // Regenerate with `cd test/fixtures/storage/ && zip -r assets.zip assets/`
-    return "test/fixtures/storage/assets.zip";
-#else
-    return "test/fixtures/storage/assets";
-#endif
-}
-
-} // namespace
+#include <atomic>
 
 using namespace mbgl;
 
+#if !ANDROID
 TEST(AssetFileSource, Load) {
     util::RunLoop loop;
 
-    AssetFileSource fs(getFileSourceRoot());
+    AssetFileSource fs("test/fixtures/storage/assets");
 
     // iOS seems to run out of file descriptors...
-#if TARGET_OS_IPHONE || __ANDROID__
+#if TARGET_OS_IPHONE
     unsigned numThreads = 30;
 #else
     unsigned numThreads = 50;
 #endif
-
-    auto callback = [&] {
-        if (!--numThreads) {
-            loop.stop();
-        }
-    };
+    std::atomic_uint completed(numThreads);
 
     class TestWorker {
     public:
-        TestWorker(mbgl::AssetFileSource* fs_) : fs(fs_) {}
+        TestWorker(ActorRef<TestWorker>, mbgl::AssetFileSource* fs_) : fs(fs_) {}
 
         void run(std::function<void()> endCallback) {
             const std::string asset("asset://nonempty");
@@ -72,16 +57,12 @@ TEST(AssetFileSource, Load) {
     };
 
     std::vector<std::unique_ptr<util::Thread<TestWorker>>> threads;
-    std::vector<std::unique_ptr<mbgl::AsyncRequest>> requests;
-    util::ThreadContext context = { "Test" };
 
     for (unsigned i = 0; i < numThreads; ++i) {
         std::unique_ptr<util::Thread<TestWorker>> thread =
-            std::make_unique<util::Thread<TestWorker>>(context, &fs);
+            std::make_unique<util::Thread<TestWorker>>("Test", &fs);
 
-        requests.push_back(
-            thread->invokeWithCallback(&TestWorker::run, callback));
-
+        thread->actor().invoke(&TestWorker::run, [&] { if (!--completed) loop.stop(); });
         threads.push_back(std::move(thread));
     }
 
@@ -91,7 +72,7 @@ TEST(AssetFileSource, Load) {
 TEST(AssetFileSource, EmptyFile) {
     util::RunLoop loop;
 
-    AssetFileSource fs(getFileSourceRoot());
+    AssetFileSource fs("test/fixtures/storage/assets");
 
     std::unique_ptr<AsyncRequest> req = fs.request({ Resource::Unknown, "asset://empty" }, [&](Response res) {
         req.reset();
@@ -107,7 +88,7 @@ TEST(AssetFileSource, EmptyFile) {
 TEST(AssetFileSource, NonEmptyFile) {
     util::RunLoop loop;
 
-    AssetFileSource fs(getFileSourceRoot());
+    AssetFileSource fs("test/fixtures/storage/assets");
 
     std::unique_ptr<AsyncRequest> req = fs.request({ Resource::Unknown, "asset://nonempty" }, [&](Response res) {
         req.reset();
@@ -123,7 +104,7 @@ TEST(AssetFileSource, NonEmptyFile) {
 TEST(AssetFileSource, NonExistentFile) {
     util::RunLoop loop;
 
-    AssetFileSource fs(getFileSourceRoot());
+    AssetFileSource fs("test/fixtures/storage/assets");
 
     std::unique_ptr<AsyncRequest> req = fs.request({ Resource::Unknown, "asset://does_not_exist" }, [&](Response res) {
         req.reset();
@@ -140,7 +121,7 @@ TEST(AssetFileSource, NonExistentFile) {
 TEST(AssetFileSource, ReadDirectory) {
     util::RunLoop loop;
 
-    AssetFileSource fs(getFileSourceRoot());
+    AssetFileSource fs("test/fixtures/storage/assets");
 
     std::unique_ptr<AsyncRequest> req = fs.request({ Resource::Unknown, "asset://directory" }, [&](Response res) {
         req.reset();
@@ -157,7 +138,7 @@ TEST(AssetFileSource, ReadDirectory) {
 TEST(AssetFileSource, URLEncoding) {
     util::RunLoop loop;
 
-    AssetFileSource fs(getFileSourceRoot());
+    AssetFileSource fs("test/fixtures/storage/assets");
 
     std::unique_ptr<AsyncRequest> req = fs.request({ Resource::Unknown, "asset://%6eonempty" }, [&](Response res) {
         req.reset();
@@ -169,3 +150,4 @@ TEST(AssetFileSource, URLEncoding) {
 
     loop.run();
 }
+#endif

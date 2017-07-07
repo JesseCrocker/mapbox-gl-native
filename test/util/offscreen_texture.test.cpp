@@ -14,6 +14,11 @@ TEST(OffscreenTexture, EmptyRed) {
     HeadlessBackend backend { test::sharedDisplay() };
     BackendScope scope { backend };
     OffscreenView view(backend.getContext(), { 512, 256 });
+
+    // Scissor test shouldn't leak after OffscreenView::bind().
+    MBGL_CHECK_ERROR(glScissor(64, 64, 128, 128));
+    backend.getContext().scissorTest.setCurrentValue(true);
+
     view.bind();
 
     MBGL_CHECK_ERROR(glClearColor(1.0f, 0.0f, 0.0f, 1.0f));
@@ -35,7 +40,7 @@ struct Shader {
         MBGL_CHECK_ERROR(glCompileShader(fragmentShader));
         MBGL_CHECK_ERROR(glAttachShader(program, fragmentShader));
         MBGL_CHECK_ERROR(glLinkProgram(program));
-        a_pos = glGetAttribLocation(program, "a_pos");
+        a_pos = MBGL_CHECK_ERROR(glGetAttribLocation(program, "a_pos"));
     }
 
     ~Shader() {
@@ -114,7 +119,7 @@ void main() {
 }
 )MBGL_SHADER");
 
-    GLuint u_texture = glGetUniformLocation(compositeShader.program, "u_texture");
+    GLuint u_texture = MBGL_CHECK_ERROR(glGetUniformLocation(compositeShader.program, "u_texture"));
 
     Buffer triangleBuffer({ 0, 0.5, 0.5, -0.5, -0.5, -0.5 });
     Buffer viewportBuffer({ -1, -1, 1, -1, -1, 1, 1, 1 });
@@ -128,6 +133,11 @@ void main() {
     // Then, create a texture, bind it, and render yellow to that texture. This should not
     // affect the originally bound FBO.
     OffscreenTexture texture(context, { 128, 128 });
+
+    // Scissor test shouldn't leak after OffscreenTexture::bind().
+    MBGL_CHECK_ERROR(glScissor(32, 32, 64, 64));
+    context.scissorTest.setCurrentValue(true);
+
     texture.bind();
 
     context.clear(Color(), {}, {});

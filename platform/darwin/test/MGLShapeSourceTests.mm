@@ -105,11 +105,11 @@
 
 - (void)testMGLShapeSourceWithPolygonFeatures {
     CLLocationCoordinate2D coordinates[] = {
-        CLLocationCoordinate2DMake(100.0, 0.0),
-        CLLocationCoordinate2DMake(101.0, 0.0),
-        CLLocationCoordinate2DMake(101.0, 1.0),
-        CLLocationCoordinate2DMake(100.0, 1.0),
-        CLLocationCoordinate2DMake(100.0, 0.0)};
+        CLLocationCoordinate2DMake(0.0, 100.0),
+        CLLocationCoordinate2DMake(0.0, 101.0),
+        CLLocationCoordinate2DMake(1.0, 101.0),
+        CLLocationCoordinate2DMake(1.0, 100.0),
+        CLLocationCoordinate2DMake(0.0, 100.0)};
 
     MGLPolygonFeature *polygonFeature = [MGLPolygonFeature polygonWithCoordinates:coordinates count:5];
     polygonFeature.identifier = @"feature-id";
@@ -151,18 +151,18 @@
 
 - (void)testMGLShapeSourceWithPolygonFeaturesInculdingInteriorPolygons {
     CLLocationCoordinate2D coordinates[] = {
-        CLLocationCoordinate2DMake(100.0, 0.0),
-        CLLocationCoordinate2DMake(101.0, 0.0),
-        CLLocationCoordinate2DMake(101.0, 1.0),
-        CLLocationCoordinate2DMake(100.0, 1.0),
-        CLLocationCoordinate2DMake(100.0, 0.0)};
+        CLLocationCoordinate2DMake(0.0, 100.0),
+        CLLocationCoordinate2DMake(0.0, 101.0),
+        CLLocationCoordinate2DMake(1.0, 101.0),
+        CLLocationCoordinate2DMake(1.0, 100.0),
+        CLLocationCoordinate2DMake(0.0, 100.0)};
 
     CLLocationCoordinate2D interiorCoordinates[] = {
-        CLLocationCoordinate2DMake(100.2, 0.2),
-        CLLocationCoordinate2DMake(100.8, 0.2),
-        CLLocationCoordinate2DMake(100.8, 0.8),
-        CLLocationCoordinate2DMake(100.2, 0.8),
-        CLLocationCoordinate2DMake(100.2, 0.2)};
+        CLLocationCoordinate2DMake(0.2, 100.2),
+        CLLocationCoordinate2DMake(0.2, 100.8),
+        CLLocationCoordinate2DMake(0.8, 100.8),
+        CLLocationCoordinate2DMake(0.8, 100.2),
+        CLLocationCoordinate2DMake(0.2, 100.2)};
 
     MGLPolygon *polygon = [MGLPolygon polygonWithCoordinates:interiorCoordinates count:5];
 
@@ -189,18 +189,18 @@
 
 - (void)testMGLShapeSourceWithMultiPolygonFeatures {
     CLLocationCoordinate2D coordinates[] = {
-        CLLocationCoordinate2DMake(100.0, 0.0),
-        CLLocationCoordinate2DMake(101.0, 0.0),
-        CLLocationCoordinate2DMake(101.0, 1.0),
-        CLLocationCoordinate2DMake(100.0, 1.0),
-        CLLocationCoordinate2DMake(100.0, 0.0)};
+        CLLocationCoordinate2DMake(0.0, 100.0),
+        CLLocationCoordinate2DMake(0.0, 101.0),
+        CLLocationCoordinate2DMake(1.0, 101.0),
+        CLLocationCoordinate2DMake(1.0, 100.0),
+        CLLocationCoordinate2DMake(0.0, 100.0)};
 
     CLLocationCoordinate2D interiorCoordinates[] = {
-        CLLocationCoordinate2DMake(100.2, 0.2),
-        CLLocationCoordinate2DMake(100.8, 0.2),
-        CLLocationCoordinate2DMake(100.8, 0.8),
-        CLLocationCoordinate2DMake(100.2, 0.8),
-        CLLocationCoordinate2DMake(100.2, 0.2)};
+        CLLocationCoordinate2DMake(0.2, 100.2),
+        CLLocationCoordinate2DMake(0.2, 100.8),
+        CLLocationCoordinate2DMake(0.8, 100.8),
+        CLLocationCoordinate2DMake(0.8, 100.2),
+        CLLocationCoordinate2DMake(0.2, 100.2)};
 
     MGLPolygon *polygon = [MGLPolygon polygonWithCoordinates:interiorCoordinates count:5];
 
@@ -217,7 +217,7 @@
 
 - (void)testMGLShapeSourceWithPointFeature {
     MGLPointFeature *pointFeature = [MGLPointFeature new];
-    pointFeature.coordinate = CLLocationCoordinate2DMake(100.2, 0.2);
+    pointFeature.coordinate = CLLocationCoordinate2DMake(0.2, 100.2);
 
     MGLShapeSource *source = [[MGLShapeSource alloc] initWithIdentifier:@"souce-id" shape:pointFeature options:nil];
 
@@ -227,11 +227,11 @@
 
 - (void)testMGLShapeSourceWithPointCollectionFeature {
     CLLocationCoordinate2D coordinates[] = {
-        CLLocationCoordinate2DMake(100.0, 0.0),
-        CLLocationCoordinate2DMake(101.0, 0.0),
-        CLLocationCoordinate2DMake(101.0, 1.0),
-        CLLocationCoordinate2DMake(100.0, 1.0),
-        CLLocationCoordinate2DMake(100.0, 0.0)};
+        CLLocationCoordinate2DMake(0.0, 100.0),
+        CLLocationCoordinate2DMake(0.0, 101.0),
+        CLLocationCoordinate2DMake(1.0, 101.0),
+        CLLocationCoordinate2DMake(1.0, 100.0),
+        CLLocationCoordinate2DMake(0.0, 100.0)};
     MGLPointCollectionFeature *pointCollectionFeature = [MGLPointCollectionFeature pointCollectionWithCoordinates:coordinates count:5];
     MGLShapeSource *source = [[MGLShapeSource alloc] initWithIdentifier:@"souce-id" shape:pointCollectionFeature options:nil];
 
@@ -241,18 +241,18 @@
 
 - (void)testMGLShapeSourceWithShapeCollectionFeatures {
     CLLocationCoordinate2D coordinates[] = {
-        CLLocationCoordinate2DMake(100.0, 0.0),
-        CLLocationCoordinate2DMake(101.0, 0.0),
-        CLLocationCoordinate2DMake(101.0, 1.0),
-        CLLocationCoordinate2DMake(100.0, 1.0),
-        CLLocationCoordinate2DMake(100.0, 0.0)};
+        CLLocationCoordinate2DMake(0.0, 100.0),
+        CLLocationCoordinate2DMake(0.0, 101.0),
+        CLLocationCoordinate2DMake(1.0, 101.0),
+        CLLocationCoordinate2DMake(1.0, 100.0),
+        CLLocationCoordinate2DMake(0.0, 100.0)};
 
     CLLocationCoordinate2D interiorCoordinates[] = {
-        CLLocationCoordinate2DMake(100.2, 0.2),
-        CLLocationCoordinate2DMake(100.8, 0.2),
-        CLLocationCoordinate2DMake(100.8, 0.8),
-        CLLocationCoordinate2DMake(100.2, 0.8),
-        CLLocationCoordinate2DMake(100.2, 0.2)};
+        CLLocationCoordinate2DMake(0.2, 100.2),
+        CLLocationCoordinate2DMake(0.2, 100.8),
+        CLLocationCoordinate2DMake(0.8, 100.8),
+        CLLocationCoordinate2DMake(0.8, 100.2),
+        CLLocationCoordinate2DMake(0.2, 100.2)};
 
     MGLPolygon *polygon = [MGLPolygon polygonWithCoordinates:interiorCoordinates count:5];
 
@@ -268,7 +268,7 @@
     MGLPointCollectionFeature *pointCollectionFeature = [MGLPointCollectionFeature pointCollectionWithCoordinates:coordinates count:5];
 
     MGLPointFeature *pointFeature = [MGLPointFeature new];
-    pointFeature.coordinate = CLLocationCoordinate2DMake(100.2, 0.2);
+    pointFeature.coordinate = CLLocationCoordinate2DMake(0.2, 100.2);
 
     MGLShapeCollectionFeature *shapeCollectionFeature = [MGLShapeCollectionFeature shapeCollectionWithShapes:@[polygonFeature, polylineFeature, multiPolygonFeature, multiPolylineFeature, pointCollectionFeature, pointFeature]];
 
@@ -281,11 +281,11 @@
 
 - (void)testMGLShapeSourceWithFeaturesConvenienceInitializer {
     CLLocationCoordinate2D coordinates[] = {
-        CLLocationCoordinate2DMake(100.0, 0.0),
-        CLLocationCoordinate2DMake(101.0, 0.0),
-        CLLocationCoordinate2DMake(101.0, 1.0),
-        CLLocationCoordinate2DMake(100.0, 1.0),
-        CLLocationCoordinate2DMake(100.0, 0.0)};
+        CLLocationCoordinate2DMake(0.0, 100.0),
+        CLLocationCoordinate2DMake(0.0, 101.0),
+        CLLocationCoordinate2DMake(1.0, 101.0),
+        CLLocationCoordinate2DMake(1.0, 100.0),
+        CLLocationCoordinate2DMake(0.0, 100.0)};
 
     MGLPolygonFeature *polygonFeature = [MGLPolygonFeature polygonWithCoordinates:coordinates count:sizeof(coordinates)/sizeof(coordinates[0]) interiorPolygons:nil];
 
@@ -303,11 +303,11 @@
 
 - (void)testMGLShapeSourceWithShapesConvenienceInitializer {
     CLLocationCoordinate2D coordinates[] = {
-        CLLocationCoordinate2DMake(100.0, 0.0),
-        CLLocationCoordinate2DMake(101.0, 0.0),
-        CLLocationCoordinate2DMake(101.0, 1.0),
-        CLLocationCoordinate2DMake(100.0, 1.0),
-        CLLocationCoordinate2DMake(100.0, 0.0)};
+        CLLocationCoordinate2DMake(0.0, 100.0),
+        CLLocationCoordinate2DMake(0.0, 101.0),
+        CLLocationCoordinate2DMake(1.0, 101.0),
+        CLLocationCoordinate2DMake(1.0, 100.0),
+        CLLocationCoordinate2DMake(0.0, 100.0)};
 
     MGLPolygon *polygon = [MGLPolygon polygonWithCoordinates:coordinates count:sizeof(coordinates)/sizeof(coordinates[0]) interiorPolygons:nil];
 

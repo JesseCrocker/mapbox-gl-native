@@ -14,7 +14,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Vector source enables the use of vector tiles.
+ * Vector source, allows the use of vector tiles.
  *
  * @see <a href="https://www.mapbox.com/mapbox-gl-style-spec/#sources-vector">the style specification</a>
  */
@@ -31,10 +31,10 @@ public class VectorSource extends Source {
   }
 
   /**
-   * Create a vector source from a remote url
+   * Create a vector source from a remote url pointing to a TileJSON resource
    *
    * @param id  the source id
-   * @param url the url
+   * @param url the TileJSON resource url
    */
   public VectorSource(String id, URL url) {
     this(id, url.toExternalForm());
@@ -76,10 +76,20 @@ public class VectorSource extends Source {
     return features != null ? Arrays.asList(features) : new ArrayList<Feature>();
   }
 
+  /**
+   * @return The url or null
+   */
+  @Nullable
+  public String getUrl() {
+    return nativeGetUrl();
+  }
+
   protected native void initialize(String layerId, Object payload);
 
   @Override
   protected native void finalize() throws Throwable;
+
+  protected native String nativeGetUrl();
 
   private native Feature[] querySourceFeatures(String[] sourceLayerId,
                                                Object[] filter);

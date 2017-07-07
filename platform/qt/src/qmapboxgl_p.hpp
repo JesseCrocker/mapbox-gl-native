@@ -20,17 +20,18 @@ public:
     explicit QMapboxGLPrivate(QMapboxGL *, const QMapboxGLSettings &, const QSize &size, qreal pixelRatio);
     virtual ~QMapboxGLPrivate();
 
-    // mbgl::View implementation.
-    float getPixelRatio() const;
-    void bind() final;
-    std::array<uint16_t, 2> getSize() const;
-    std::array<uint16_t, 2> getFramebufferSize() const;
+    mbgl::Size framebufferSize() const;
 
+    // mbgl::View implementation.
+    void bind() final;
+
+    // mbgl::Backend implementation.
+    void updateAssumedState() final;
+    void invalidate() final;
     void activate() final {}
     void deactivate() final {}
-    void invalidate() final;
 
-    // mbgl::Backend (mbgl::MapObserver) implementation.
+    // mbgl::MapObserver implementation.
     void onCameraWillChange(mbgl::MapObserver::CameraChangeMode) final;
     void onCameraIsChanging() final;
     void onCameraDidChange(mbgl::MapObserver::CameraChangeMode) final;
@@ -42,11 +43,12 @@ public:
     void onWillStartRenderingMap() final;
     void onDidFinishRenderingMap(mbgl::MapObserver::RenderMode) final;
     void onDidFinishLoadingStyle() final;
-    void onSourceDidChange() final;
+    void onSourceChanged(mbgl::style::Source&) final;
 
     mbgl::EdgeInsets margins;
     QSize size { 0, 0 };
     QSize fbSize { 0, 0 };
+    quint32 fbObject = 0;
 
     QMapboxGL *q_ptr { nullptr };
 
@@ -55,6 +57,9 @@ public:
     std::unique_ptr<mbgl::Map> mapObj;
 
     bool dirty { false };
+
+private:
+    mbgl::gl::ProcAddress initializeExtension(const char*) override;
 
 public slots:
     void connectionEstablished();

@@ -16,22 +16,10 @@
 
 namespace mbgl {
 
-class SpriteAtlasElement;
+class ImagePosition;
 class UnwrappedTileID;
 class TransformState;
-
-namespace style {
 template <class> class Faded;
-} // namespace style
-
-namespace uniforms {
-MBGL_DEFINE_UNIFORM_SCALAR(Size,     u_world);
-MBGL_DEFINE_UNIFORM_SCALAR(float,    u_scale_a);
-MBGL_DEFINE_UNIFORM_SCALAR(float,    u_scale_b);
-MBGL_DEFINE_UNIFORM_SCALAR(float,    u_tile_units_to_pixels);
-MBGL_DEFINE_UNIFORM_VECTOR(float, 2, u_pixel_coord_upper);
-MBGL_DEFINE_UNIFORM_VECTOR(float, 2, u_pixel_coord_lower);
-} // namespace uniforms
 
 struct FillLayoutAttributes : gl::Attributes<
     attributes::a_pos>
@@ -45,6 +33,7 @@ struct FillUniforms : gl::Uniforms<
 struct FillPatternUniforms : gl::Uniforms<
     uniforms::u_matrix,
     uniforms::u_world,
+    uniforms::u_texsize,
     uniforms::u_pattern_tl_a,
     uniforms::u_pattern_br_a,
     uniforms::u_pattern_tl_b,
@@ -61,9 +50,10 @@ struct FillPatternUniforms : gl::Uniforms<
 {
     static Values values(mat4 matrix,
                          Size framebufferSize,
-                         const SpriteAtlasElement&,
-                         const SpriteAtlasElement&,
-                         const style::Faded<std::string>&,
+                         Size atlasSize,
+                         const ImagePosition&,
+                         const ImagePosition&,
+                         const Faded<std::string>&,
                          const UnwrappedTileID&,
                          const TransformState&);
 };

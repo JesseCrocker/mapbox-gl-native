@@ -10,28 +10,12 @@ using namespace mbgl::style;
  */
 class StubStyleObserver : public style::Observer {
 public:
-    void onGlyphsLoaded(const FontStack& fontStack, const GlyphRange& glyphRange) override {
-        if (glyphsLoaded) glyphsLoaded(fontStack, glyphRange);
-    }
-
-    void onGlyphsError(const FontStack& fontStack, const GlyphRange& glyphRange, std::exception_ptr error) override {
-        if (glyphsError) glyphsError(fontStack, glyphRange, error);
-    }
-
-    void onSpriteLoaded() override {
-        if (spriteLoaded) spriteLoaded();
-    }
-
-    void onSpriteError(std::exception_ptr error) override {
-        if (spriteError) spriteError(error);
-    }
-
     void onSourceLoaded(Source& source) override {
         if (sourceLoaded) sourceLoaded(source);
     }
 
-    void onSourceAttributionChanged(Source& source, const std::string& attribution) override {
-        if (sourceAttributionChanged) sourceAttributionChanged(source, attribution);
+    void onSourceChanged(Source& source) override {
+        if (sourceChanged) sourceChanged(source);
     }
 
     void onSourceError(Source& source, std::exception_ptr error) override {
@@ -42,28 +26,13 @@ public:
         if (sourceDescriptionChanged) sourceDescriptionChanged(source);
     }
 
-    void onTileChanged(Source& source, const OverscaledTileID& tileID) override {
-        if (tileChanged) tileChanged(source, tileID);
-    };
-
-    void
-    onTileError(Source& source, const OverscaledTileID& tileID, std::exception_ptr error) override {
-        if (tileError) tileError(source, tileID, error);
-    }
-
     void onResourceError(std::exception_ptr error) override {
         if (resourceError) resourceError(error);
     };
 
-    std::function<void (const FontStack&, const GlyphRange&)> glyphsLoaded;
-    std::function<void (const FontStack&, const GlyphRange&, std::exception_ptr)> glyphsError;
-    std::function<void ()> spriteLoaded;
-    std::function<void (std::exception_ptr)> spriteError;
     std::function<void (Source&)> sourceLoaded;
-    std::function<void (Source&, std::string)> sourceAttributionChanged;
+    std::function<void (Source&)> sourceChanged;
     std::function<void (Source&, std::exception_ptr)> sourceError;
     std::function<void (Source&)> sourceDescriptionChanged;
-    std::function<void (Source&, const OverscaledTileID&)> tileChanged;
-    std::function<void (Source&, const OverscaledTileID&, std::exception_ptr)> tileError;
     std::function<void (std::exception_ptr)> resourceError;
 };

@@ -1,12 +1,16 @@
 apply plugin: 'com.android.library'
 
 dependencies {
-    compile "com.android.support:support-annotations:${supportLibVersion}"
-    compile "com.android.support:support-v4:${supportLibVersion}"
-    compile "com.android.support:design:${supportLibVersion}"
+    compile rootProject.ext.dep.supportAnnotations
+    compile rootProject.ext.dep.supportV4
+    compile rootProject.ext.dep.supportDesign
     compile rootProject.ext.dep.timber
     compile rootProject.ext.dep.okhttp3
-    compile rootProject.ext.dep.lost
+    compile(rootProject.ext.dep.lost) {
+        exclude group: 'com.google.guava'
+    }
+    testCompile rootProject.ext.dep.junit
+    testCompile rootProject.ext.dep.mockito
 
     // Mapbox Android Services (GeoJSON support)
     compile(rootProject.ext.dep.mapboxJavaGeoJSON) {
@@ -27,9 +31,11 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         buildConfigField "String", "GIT_REVISION_SHORT", String.format("\"%s\"", getGitRevision())
+        buildConfigField "String", "MAPBOX_VERSION_STRING", String.format("\"Mapbox/%s\"", project.VERSION_NAME)
+        buildConfigField "String", "MAPBOX_EVENTS_USER_AGENT", String.format("\"MapboxEventsAndroid/%s\"", project.VERSION_NAME)
     }
 
-    defaultPublishConfig project.hasProperty("mapbox.buildtype") ?  project.getProperty("mapbox.buildtype") : "debug"
+    defaultPublishConfig project.hasProperty("mapbox.buildtype") ? project.getProperty("mapbox.buildtype") : "debug"
 
     // We sometimes want to invoke Gradle without building a native dependency, e.g. when we just want
     // to invoke the Java tests. When we explicitly specify an ABI of 'none', no native dependencies are
@@ -74,7 +80,11 @@ android {
                     }
 
                     targets "mapbox-gl"
-                    targets "example-custom-layer"
+
+                    if (defaultPublishConfig.equalsIgnoreCase("debug")) {
+                        targets "example-custom-layer"
+                    }
+
                     if (project.hasProperty("mapbox.with_test")) {
                         targets "mbgl-test"
                     }
@@ -87,6 +97,9 @@ android {
                 }
             }
         }
+
+        // proguard config for .aar
+        consumerProguardFiles 'proguard-rules.pro'
     }
 
     // avoid naming conflicts, force usage of prefix
@@ -107,6 +120,10 @@ android {
         warningsAsErrors true
     }
 
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
+
     buildTypes {
         debug {
             jniDebuggable true
@@ -114,7 +131,6 @@ android {
 
         release {
             // aar proguard configuration
-            consumerProguardFiles 'proguard-rules.pro'
             jniDebuggable false
         }
     }
@@ -135,3 +151,4 @@ configurations {
 apply from: 'gradle-javadoc.gradle'
 apply from: 'gradle-publish.gradle'
 apply from: 'gradle-checkstyle.gradle'
+apply from: 'gradle-tests-staticblockremover.gradle'

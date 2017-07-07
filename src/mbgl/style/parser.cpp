@@ -2,8 +2,10 @@
 #include <mbgl/style/layer_impl.hpp>
 #include <mbgl/style/rapidjson_conversion.hpp>
 #include <mbgl/style/conversion.hpp>
+#include <mbgl/style/conversion/coordinate.hpp>
 #include <mbgl/style/conversion/source.hpp>
 #include <mbgl/style/conversion/layer.hpp>
+#include <mbgl/style/conversion/light.hpp>
 
 #include <mbgl/util/logging.hpp>
 
@@ -54,10 +56,12 @@ StyleParseResult Parser::parse(const std::string& json) {
 
     if (document.HasMember("center")) {
         const JSValue& value = document["center"];
-        if (value.IsArray() && value.Size() >= 2) {
-            // Style spec uses lon/lat order
-            latLng.longitude = value[0].IsNumber() ? value[0].GetDouble() : 0;
-            latLng.latitude = value[1].IsNumber() ? value[1].GetDouble() : 0;
+        conversion::Error error;
+        auto convertedLatLng = conversion::convert<LatLng>(value, error);
+        if (convertedLatLng) {
+            latLng = *convertedLatLng;
+        } else {
+            Log::Warning(Event::ParseStyle, "center coordinate must be a longitude, latitude pair");
         }
     }
 
@@ -80,6 +84,14 @@ StyleParseResult Parser::parse(const std::string& json) {
         if (value.IsNumber()) {
             pitch = value.GetDouble();
         }
+    }
+
+    if (document.HasMember("transition")) {
+        parseTransition(document["transition"]);
+    }
+
+    if (document.HasMember("light")) {
+        parseLight(document["light"]);
     }
 
     if (document.HasMember("sources")) {
@@ -107,6 +119,28 @@ StyleParseResult Parser::parse(const std::string& json) {
     return nullptr;
 }
 
+void Parser::parseTransition(const JSValue& value) {
+    conversion::Error error;
+    optional<TransitionOptions> converted = conversion::convert<TransitionOptions>(value, error);
+    if (!converted) {
+        Log::Warning(Event::ParseStyle, error.message);
+        return;
+    }
+
+    transition = std::move(*converted);
+}
+
+void Parser::parseLight(const JSValue& value) {
+    conversion::Error error;
+    optional<Light> converted = conversion::convert<Light>(value, error);
+    if (!converted) {
+        Log::Warning(Event::ParseStyle, error.message);
+        return;
+    }
+
+    light = std::move(*converted);
+}
+
 void Parser::parseSources(const JSValue& value) {
     if (!value.IsObject()) {
         Log::Warning(Event::ParseStyle, "sources must be an object");
@@ -116,10 +150,11 @@ void Parser::parseSources(const JSValue& value) {
     for (const auto& property : value.GetObject()) {
         std::string id = *conversion::toString(property.name);
 
-        conversion::Result<std::unique_ptr<Source>> source =
-            conversion::convert<std::unique_ptr<Source>>(property.value, id);
+        conversion::Error error;
+        optional<std::unique_ptr<Source>> source =
+            conversion::convert<std::unique_ptr<Source>>(property.value, error, id);
         if (!source) {
-            Log::Warning(Event::ParseStyle, source.error().message);
+            Log::Warning(Event::ParseStyle, error.message);
             continue;
         }
 
@@ -219,12 +254,13 @@ void Parser::parseLayer(const std::string& id, const JSValue& value, std::unique
             return;
         }
 
-        layer = reference->baseImpl->cloneRef(id);
+        layer = reference->cloneRef(id);
         conversion::setPaintProperties(*layer, value);
     } else {
-        conversion::Result<std::unique_ptr<Layer>> converted = conversion::convert<std::unique_ptr<Layer>>(value);
+        conversion::Error error;
+        optional<std::unique_ptr<Layer>> converted = conversion::convert<std::unique_ptr<Layer>>(value, error);
         if (!converted) {
-            Log::Warning(Event::ParseStyle, converted.error().message);
+            Log::Warning(Event::ParseStyle, error.message);
             return;
         }
         layer = std::move(*converted);
@@ -232,20 +268,20 @@ void Parser::parseLayer(const std::string& id, const JSValue& value, std::unique
 }
 
 std::vector<FontStack> Parser::fontStacks() const {
-    std::set<FontStack> result;
+    std::set<FontStack> optional;
 
     for (const auto& layer : layers) {
         if (layer->is<SymbolLayer>()) {
             PropertyValue<FontStack> textFont = layer->as<SymbolLayer>()->getTextFont();
             if (textFont.isUndefined()) {
-                result.insert({"Open Sans Regular", "Arial Unicode MS Regular"});
+                optional.insert({"Open Sans Regular", "Arial Unicode MS Regular"});
             } else if (textFont.isConstant()) {
-                result.insert(textFont.asConstant());
+                optional.insert(textFont.asConstant());
             } else if (textFont.isCameraFunction()) {
                 textFont.asCameraFunction().stops.match(
                     [&] (const auto& stops) {
                         for (const auto& stop : stops.stops) {
-                            result.insert(stop.second);
+                            optional.insert(stop.second);
                         }
                     }
                 );
@@ -253,7 +289,7 @@ std::vector<FontStack> Parser::fontStacks() const {
         }
     }
 
-    return std::vector<FontStack>(result.begin(), result.end());
+    return std::vector<FontStack>(optional.begin(), optional.end());
 }
 
 } // namespace style

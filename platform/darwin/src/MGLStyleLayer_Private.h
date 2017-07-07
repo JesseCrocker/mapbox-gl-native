@@ -7,6 +7,14 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
+// A struct to be stored in the `peer` member of mbgl::style::Layer, in order to implement
+// object identity. We don't store a MGLStyleLayer pointer directly because that doesn't
+// interoperate with ARC. The inner pointer is weak in order to avoid a reference cycle for
+// "pending" MGLStyleLayers, which have a strong owning pointer to the mbgl::style::Layer.
+struct LayerWrapper {
+    __weak MGLStyleLayer *layer;
+};
+
 /**
  Assert that the style layer is valid.
 
@@ -26,9 +34,21 @@ NS_ASSUME_NONNULL_BEGIN
         } \
     } while (NO);
 
-@class MGLMapView;
+@class MGLStyle;
 
 @interface MGLStyleLayer (Private)
+
+/**
+ Initializes and returns a layer with a raw pointer to the backing store,
+ associated with a style.
+ */
+- (instancetype)initWithRawLayer:(mbgl::style::Layer *)rawLayer;
+
+/**
+ Initializes and returns a layer with an owning pointer to the backing store,
+ unassociated from a style.
+ */
+- (instancetype)initWithPendingLayer:(std::unique_ptr<mbgl::style::Layer>)pendingLayer;
 
 @property (nonatomic, readwrite, copy) NSString *identifier;
 
@@ -39,7 +59,7 @@ NS_ASSUME_NONNULL_BEGIN
  pointer value stays even after ownership of the object is transferred via
  `mbgl::Map addLayer`.
  */
-@property (nonatomic) mbgl::style::Layer *rawLayer;
+@property (nonatomic, readonly) mbgl::style::Layer *rawLayer;
 
 /**
  Adds the mbgl style layer that this object represents to the mbgl map below the
@@ -49,7 +69,7 @@ NS_ASSUME_NONNULL_BEGIN
  `mbgl::Map` and this object no longer has an active unique_ptr reference to the
  `mbgl::style::Layer`.
  */
-- (void)addToMapView:(MGLMapView *)mapView belowLayer:(nullable MGLStyleLayer *)otherLayer;
+- (void)addToStyle:(MGLStyle *)style belowLayer:(nullable MGLStyleLayer *)otherLayer;
 
 /**
  Removes the mbgl style layer that this object represents from the mbgl map.
@@ -58,7 +78,7 @@ NS_ASSUME_NONNULL_BEGIN
  to the `MGLStyleLayer` instance and the unique_ptr reference is valid again. It
  is safe to add the layer back to the style after it is removed.
  */
-- (void)removeFromMapView:(MGLMapView *)mapView;
+- (void)removeFromStyle:(MGLStyle *)style;
 
 @end
 

@@ -40,11 +40,14 @@ public:
 
     Image(Image&& o)
         : size(o.size),
-          data(std::move(o.data)) {}
+          data(std::move(o.data)) {
+        o.size.width = o.size.height = 0;
+    }
 
     Image& operator=(Image&& o) {
         size = o.size;
         data = std::move(o.data);
+        o.size.width = o.size.height = 0;
         return *this;
     }
 
@@ -58,7 +61,7 @@ public:
     }
 
     bool valid() const {
-        return size && data.get() != nullptr;
+        return !size.isEmpty() && data.get() != nullptr;
     }
 
     template <typename T = Image>
@@ -75,10 +78,27 @@ public:
         std::fill(data.get(), data.get() + bytes(), value);
     }
 
+    void resize(Size size_) {
+        if (size == size_) {
+            return;
+        }
+        Image newImage(size_);
+        newImage.fill(0);
+        copy(*this, newImage, {0, 0}, {0, 0}, {
+            std::min(size.width, size_.width),
+            std::min(size.height, size_.height)
+        });
+        operator=(std::move(newImage));
+    }
+
     // Copy image data within `rect` from `src` to the rectangle of the same size at `pt`
     // in `dst`. If the specified bounds exceed the bounds of the source or destination,
     // throw `std::out_of_range`. Must not be used to move data within a single Image.
     static void copy(const Image& srcImg, Image& dstImg, const Point<uint32_t>& srcPt, const Point<uint32_t>& dstPt, const Size& size) {
+        if (size.isEmpty()) {
+            return;
+        }
+
         if (!srcImg.valid()) {
             throw std::invalid_argument("invalid source for image copy");
         }

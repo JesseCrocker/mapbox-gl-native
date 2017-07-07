@@ -16,7 +16,10 @@ using namespace mbgl::style;
 Filter parse(const char * expression) {
     rapidjson::GenericDocument<rapidjson::UTF8<>, rapidjson::CrtAllocator> doc;
     doc.Parse<0>(expression);
-    return *conversion::convert<Filter, JSValue>(doc);
+    conversion::Error error;
+    optional<Filter> filter = conversion::convert<Filter, JSValue>(doc, error);
+    EXPECT_TRUE(bool(filter));
+    return *filter;
 }
 
 Feature feature(const PropertyMap& properties, const Geometry<double>& geometry = Point<double>()) {
@@ -26,13 +29,13 @@ Feature feature(const PropertyMap& properties, const Geometry<double>& geometry 
 }
 
 TEST(Filter, EqualsString) {
-    Filter f = parse("[\"==\", \"foo\", \"bar\"]");
+    Filter f = parse(R"(["==", "foo", "bar"])");
     ASSERT_TRUE(f(feature({{ "foo", std::string("bar") }})));
     ASSERT_FALSE(f(feature({{ "foo", std::string("baz") }})));
 }
 
 TEST(Filter, EqualsNumber) {
-    Filter f = parse("[\"==\", \"foo\", 0]");
+    Filter f = parse(R"(["==", "foo", 0])");
     ASSERT_TRUE(f(feature({{ "foo", int64_t(0) }})));
     ASSERT_TRUE(f(feature({{ "foo", uint64_t(0) }})));
     ASSERT_TRUE(f(feature({{ "foo", double(0) }})));
@@ -47,13 +50,13 @@ TEST(Filter, EqualsNumber) {
 }
 
 TEST(Filter, EqualsType) {
-    Filter f = parse("[\"==\", \"$type\", \"LineString\"]");
+    Filter f = parse(R"(["==", "$type", "LineString"])");
     ASSERT_FALSE(f(feature({{}}, Point<double>())));
     ASSERT_TRUE(f(feature({{}}, LineString<double>())));
 }
 
 TEST(Filter, InType) {
-    Filter f = parse("[\"in\", \"$type\", \"LineString\", \"Polygon\"]");
+    Filter f = parse(R"(["in", "$type", "LineString", "Polygon"])");
     ASSERT_FALSE(f(feature({{}}, Point<double>())));
     ASSERT_TRUE(f(feature({{}}, LineString<double>())));
     ASSERT_TRUE(f(feature({{}}, Polygon<double>())));

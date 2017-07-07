@@ -1,6 +1,5 @@
 #include "qmapbox.hpp"
 
-#include <mbgl/gl/extension.hpp>
 #include <mbgl/storage/network_status.hpp>
 #include <mbgl/util/default_styles.hpp>
 #include <mbgl/util/geometry.hpp>
@@ -140,16 +139,6 @@ namespace QMapbox {
 */
 
 /*!
-    \class QMapbox::StyleSourcedAnnotation
-
-    \inmodule Mapbox Qt SDK
-
-    Represents a style sourced annotation object, along with its properties.
-
-    A style sourced annotation comprises of its geometry and a layer identifier.
-*/
-
-/*!
     \typedef QMapbox::Annotation
 
     Alias for QVariant.
@@ -253,28 +242,6 @@ Q_DECL_EXPORT QList<QPair<QString, QString> >& defaultStyles()
     }
 
     return styles;
-}
-
-/*!
-    \fn void QMapbox::initializeGLExtensions()
-
-    Initializes the OpenGL extensions such as Vertex Array Objects (VAOs),
-    required by Mapbox GL Native engine.
-
-    Should be called only once, after an OpenGL context is available.
-    Consecutive calls are ignored.
-*/
-Q_DECL_EXPORT void initializeGLExtensions()
-{
-    mbgl::gl::InitializeExtensions([](const char* name) {
-#if QT_VERSION >= 0x050000
-        QOpenGLContext* thisContext = QOpenGLContext::currentContext();
-        return thisContext->getProcAddress(name);
-#else
-        const QGLContext* thisContext = QGLContext::currentContext();
-        return reinterpret_cast<mbgl::gl::glProc>(thisContext->getProcAddress(name));
-#endif
-    });
 }
 
 } // namespace QMapbox

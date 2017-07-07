@@ -10,7 +10,7 @@ The Mapbox iOS SDK is intended to run on iOS 8.0 and above on the following devi
 * iPad 2 and above (3, 4, Mini, Air, Mini 2, Air 2)
 * iPod touch 5th generation and above
 
-The Mapbox iOS SDK requires Xcode 7.3 or higher.
+The Mapbox iOS SDK requires Xcode 8.0 or higher. To use this SDK with Xcode 7.3.1, download and use a symbols build from the [releases](https://github.com/mapbox/mapbox-gl-native/releases) page.
 
 ### Building the SDK
 
@@ -110,6 +110,18 @@ pod 'Mapbox-iOS-SDK-nightly-dynamic', podspec: 'https://raw.githubusercontent.co
 1. Run `pod update` to grab the newly-built library.
 
 If using the static framework, add `$(inherited)` to your target’s Other Linker Flags in the Build Settings tab.
+
+#### Carthage
+
+For instructions on installing stable release versions of the Mapbox iOS SDK with Carthage, see [our website](https://www.mapbox.com/ios-sdk/). If you require a build without symbols pre-stripped, use [this feed URL](https://www.mapbox.com/ios-sdk/Mapbox-iOS-SDK-symbols.json) with Carthage.
+
+##### Testing pre-releases with Carthage
+
+Carthage currently does not support pre-release versions of binaries.
+
+##### Using your own build with Carthage
+
+This project does not support being compiled as a local repository by Carthage.
 
 ### Configuration
 

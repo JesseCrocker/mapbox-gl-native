@@ -12,7 +12,7 @@ namespace mbgl {
 class OffscreenView::Impl {
 public:
     Impl(gl::Context& context_, const Size size_) : context(context_), size(std::move(size_)) {
-        assert(size);
+        assert(!size.isEmpty());
     }
 
     void bind() {
@@ -24,6 +24,7 @@ public:
             context.bindFramebuffer = framebuffer->framebuffer;
         }
 
+        context.scissorTest = false;
         context.viewport = { 0, 0, size };
     }
 

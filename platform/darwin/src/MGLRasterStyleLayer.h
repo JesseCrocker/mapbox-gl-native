@@ -1,5 +1,5 @@
 // This file is generated.
-// Edit platform/darwin/scripts/generate-style-code.js, then run `make style-code-darwin`.
+// Edit platform/darwin/scripts/generate-style-code.js, then run `make darwin-style-code`.
 
 #import "MGLFoundation.h"
 #import "MGLStyleValue.h"
@@ -36,6 +36,21 @@ NS_ASSUME_NONNULL_BEGIN
 MGL_EXPORT
 @interface MGLRasterStyleLayer : MGLForegroundStyleLayer
 
+/**
+ Returns a raster style layer initialized with an identifier and source.
+
+ After initializing and configuring the style layer, add it to a map view’s
+ style using the `-[MGLStyle addLayer:]` or
+ `-[MGLStyle insertLayer:belowLayer:]` method.
+
+ @param identifier A string that uniquely identifies the source in the style to
+    which it is added.
+ @param source The source from which to obtain the data to style. If the source
+    has not yet been added to the current style, the behavior is undefined.
+ @return An initialized foreground style layer.
+ */
+- (instancetype)initWithIdentifier:(NSString *)identifier source:(MGLSource *)source;
+
 #pragma mark - Accessing the Paint Attributes
 
 /**
@@ -52,12 +67,19 @@ MGL_EXPORT
  
  You can set this property to an instance of:
  
- * `MGLStyleConstantValue`
+ * `MGLConstantStyleValue`
  * `MGLCameraStyleFunction` with an interpolation mode of:
    * `MGLInterpolationModeExponential`
    * `MGLInterpolationModeInterval`
  */
 @property (nonatomic, null_resettable) MGLStyleValue<NSNumber *> *maximumRasterBrightness;
+
+/**
+ The transition affecting any changes to this layer’s `maximumRasterBrightness` property.
+
+ This property corresponds to the `raster-brightness-max-transition` property in the style JSON file format.
+*/
+@property (nonatomic) MGLTransition maximumRasterBrightnessTransition;
 
 @property (nonatomic, null_resettable) MGLStyleValue<NSNumber *> *rasterBrightnessMax __attribute__((unavailable("Use maximumRasterBrightness instead.")));
 
@@ -75,12 +97,19 @@ MGL_EXPORT
  
  You can set this property to an instance of:
  
- * `MGLStyleConstantValue`
+ * `MGLConstantStyleValue`
  * `MGLCameraStyleFunction` with an interpolation mode of:
    * `MGLInterpolationModeExponential`
    * `MGLInterpolationModeInterval`
  */
 @property (nonatomic, null_resettable) MGLStyleValue<NSNumber *> *minimumRasterBrightness;
+
+/**
+ The transition affecting any changes to this layer’s `minimumRasterBrightness` property.
+
+ This property corresponds to the `raster-brightness-min-transition` property in the style JSON file format.
+*/
+@property (nonatomic) MGLTransition minimumRasterBrightnessTransition;
 
 @property (nonatomic, null_resettable) MGLStyleValue<NSNumber *> *rasterBrightnessMin __attribute__((unavailable("Use minimumRasterBrightness instead.")));
 
@@ -93,12 +122,19 @@ MGL_EXPORT
  
  You can set this property to an instance of:
  
- * `MGLStyleConstantValue`
+ * `MGLConstantStyleValue`
  * `MGLCameraStyleFunction` with an interpolation mode of:
    * `MGLInterpolationModeExponential`
    * `MGLInterpolationModeInterval`
  */
 @property (nonatomic, null_resettable) MGLStyleValue<NSNumber *> *rasterContrast;
+
+/**
+ The transition affecting any changes to this layer’s `rasterContrast` property.
+
+ This property corresponds to the `raster-contrast-transition` property in the style JSON file format.
+*/
+@property (nonatomic) MGLTransition rasterContrastTransition;
 
 /**
  Fade duration when a new tile is added.
@@ -111,12 +147,19 @@ MGL_EXPORT
  
  You can set this property to an instance of:
  
- * `MGLStyleConstantValue`
+ * `MGLConstantStyleValue`
  * `MGLCameraStyleFunction` with an interpolation mode of:
    * `MGLInterpolationModeExponential`
    * `MGLInterpolationModeInterval`
  */
 @property (nonatomic, null_resettable) MGLStyleValue<NSNumber *> *rasterFadeDuration;
+
+/**
+ The transition affecting any changes to this layer’s `rasterFadeDuration` property.
+
+ This property corresponds to the `raster-fade-duration-transition` property in the style JSON file format.
+*/
+@property (nonatomic) MGLTransition rasterFadeDurationTransition;
 
 /**
  Rotates hues around the color wheel.
@@ -133,12 +176,19 @@ MGL_EXPORT
  
  You can set this property to an instance of:
  
- * `MGLStyleConstantValue`
+ * `MGLConstantStyleValue`
  * `MGLCameraStyleFunction` with an interpolation mode of:
    * `MGLInterpolationModeExponential`
    * `MGLInterpolationModeInterval`
  */
 @property (nonatomic, null_resettable) MGLStyleValue<NSNumber *> *rasterHueRotation;
+
+/**
+ The transition affecting any changes to this layer’s `rasterHueRotation` property.
+
+ This property corresponds to the `raster-hue-rotate-transition` property in the style JSON file format.
+*/
+@property (nonatomic) MGLTransition rasterHueRotationTransition;
 
 @property (nonatomic, null_resettable) MGLStyleValue<NSNumber *> *rasterHueRotate __attribute__((unavailable("Use rasterHueRotation instead.")));
 
@@ -151,12 +201,19 @@ MGL_EXPORT
  
  You can set this property to an instance of:
  
- * `MGLStyleConstantValue`
+ * `MGLConstantStyleValue`
  * `MGLCameraStyleFunction` with an interpolation mode of:
    * `MGLInterpolationModeExponential`
    * `MGLInterpolationModeInterval`
  */
 @property (nonatomic, null_resettable) MGLStyleValue<NSNumber *> *rasterOpacity;
+
+/**
+ The transition affecting any changes to this layer’s `rasterOpacity` property.
+
+ This property corresponds to the `raster-opacity-transition` property in the style JSON file format.
+*/
+@property (nonatomic) MGLTransition rasterOpacityTransition;
 
 /**
  Increase or reduce the saturation of the image.
@@ -167,12 +224,19 @@ MGL_EXPORT
  
  You can set this property to an instance of:
  
- * `MGLStyleConstantValue`
+ * `MGLConstantStyleValue`
  * `MGLCameraStyleFunction` with an interpolation mode of:
    * `MGLInterpolationModeExponential`
    * `MGLInterpolationModeInterval`
  */
 @property (nonatomic, null_resettable) MGLStyleValue<NSNumber *> *rasterSaturation;
+
+/**
+ The transition affecting any changes to this layer’s `rasterSaturation` property.
+
+ This property corresponds to the `raster-saturation-transition` property in the style JSON file format.
+*/
+@property (nonatomic) MGLTransition rasterSaturationTransition;
 
 @end
 

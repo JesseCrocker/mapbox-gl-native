@@ -30,7 +30,7 @@ public:
 
         const int error = sqlite3_close(db);
         if (error != SQLITE_OK) {
-            throw Exception { error, sqlite3_errmsg(db) };
+            mbgl::Log::Error(mbgl::Event::Database, "%s (Code %i)", sqlite3_errmsg(db), error);
         }
     }
 
@@ -107,12 +107,7 @@ Database &Database::operator=(Database &&other) {
     return *this;
 }
 
-Database::~Database() {
-}
-
-Database::operator bool() const {
-    return impl.operator bool();
-}
+Database::~Database() = default;
 
 void Database::setBusyTimeout(std::chrono::milliseconds timeout) {
     assert(impl);
@@ -155,12 +150,7 @@ Statement &Statement::operator=(Statement &&other) {
     return *this;
 }
 
-Statement::~Statement() {
-}
-
-Statement::operator bool() const {
-    return impl.operator bool();
-}
+Statement::~Statement() = default;
 
 template <> void Statement::bind(int offset, std::nullptr_t) {
     assert(impl);
@@ -322,7 +312,7 @@ template <> std::string Statement::get(int offset) {
 
 template <> std::vector<uint8_t> Statement::get(int offset) {
     assert(impl);
-    const uint8_t* begin = reinterpret_cast<const uint8_t*>(sqlite3_column_blob(impl->stmt, offset));
+    const auto* begin = reinterpret_cast<const uint8_t*>(sqlite3_column_blob(impl->stmt, offset));
     const uint8_t* end   = begin + sqlite3_column_bytes(impl->stmt, offset);
     return { begin, end };
 }

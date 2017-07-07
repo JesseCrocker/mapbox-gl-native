@@ -8,16 +8,16 @@
 namespace mbgl {
 
 class Tileset;
+class TileParameters;
 
 namespace style {
 class Layer;
-class UpdateParameters;
 } // namespace style
 
 class RasterTile : public Tile {
 public:
     RasterTile(const OverscaledTileID&,
-                   const style::UpdateParameters&,
+                   const TileParameters&,
                    const Tileset&);
     ~RasterTile() final;
 
@@ -29,7 +29,9 @@ public:
                  optional<Timestamp> expires_);
 
     void cancel() override;
-    Bucket* getBucket(const style::Layer&) override;
+
+    void upload(gl::Context&) override;
+    Bucket* getBucket(const style::Layer::Impl&) const override;
 
     void onParsed(std::unique_ptr<Bucket> result);
     void onError(std::exception_ptr);

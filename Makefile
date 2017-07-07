@@ -1,4 +1,5 @@
 export BUILDTYPE ?= Debug
+export WITH_CXX11ABI ?= $(shell scripts/check-cxx11abi.sh)
 
 ifeq ($(BUILDTYPE), Release)
 else ifeq ($(BUILDTYPE), Debug)
@@ -69,30 +70,9 @@ MACOS_XCODEBUILD = xcodebuild \
 	  -configuration $(BUILDTYPE) \
 	  -workspace $(MACOS_WORK_PATH)
 
-
-MACOS_XCSCHEMES += platform/macos/scripts/executable.xcscheme
-MACOS_XCSCHEMES += platform/macos/scripts/library.xcscheme
-MACOS_XCSCHEMES += platform/macos/scripts/node.xcscheme
-
-$(MACOS_PROJ_PATH): $(BUILD_DEPS) $(MACOS_USER_DATA_PATH)/WorkspaceSettings.xcsettings $(MACOS_XCSCHEMES)
+$(MACOS_PROJ_PATH): $(BUILD_DEPS) $(MACOS_USER_DATA_PATH)/WorkspaceSettings.xcsettings
 	mkdir -p $(MACOS_OUTPUT_PATH)
 	(cd $(MACOS_OUTPUT_PATH) && cmake -G Xcode ../..)
-
-	@# Create Xcode schemes so that we can use xcodebuild from the command line. CMake doesn't
-	@# create these automatically.
-	SCHEME_NAME=mbgl-test SCHEME_TYPE=executable platform/macos/scripts/create_scheme.sh
-	SCHEME_NAME=mbgl-benchmark SCHEME_TYPE=executable platform/macos/scripts/create_scheme.sh
-	SCHEME_NAME=mbgl-render SCHEME_TYPE=executable platform/macos/scripts/create_scheme.sh
-	SCHEME_NAME=mbgl-offline SCHEME_TYPE=executable platform/macos/scripts/create_scheme.sh
-	SCHEME_NAME=mbgl-glfw SCHEME_TYPE=executable platform/macos/scripts/create_scheme.sh
-	SCHEME_NAME=mbgl-core SCHEME_TYPE=library BUILDABLE_NAME=libmbgl-core.a BLUEPRINT_NAME=mbgl-core platform/macos/scripts/create_scheme.sh
-	SCHEME_NAME=mbgl-node SCHEME_TYPE=library BUILDABLE_NAME=mbgl-node.node BLUEPRINT_NAME=mbgl-node platform/macos/scripts/create_scheme.sh
-
-	@# Create schemes for running node tests. These have all of the environment variables set to
-	@# launch in the correct location.
-	SCHEME_NAME="node tests" SCHEME_TYPE=node BUILDABLE_NAME=mbgl-node.node BLUEPRINT_NAME=mbgl-node NODE_ARGUMENT="`npm bin tape`/tape platform/node/test/js/**/*.test.js" platform/macos/scripts/create_scheme.sh
-	SCHEME_NAME="node render tests" SCHEME_TYPE=node BUILDABLE_NAME=mbgl-node.node BLUEPRINT_NAME=mbgl-node NODE_ARGUMENT="platform/node/test/render.test.js" platform/macos/scripts/create_scheme.sh
-	SCHEME_NAME="node query tests" SCHEME_TYPE=node BUILDABLE_NAME=mbgl-node.node BLUEPRINT_NAME=mbgl-node NODE_ARGUMENT="platform/node/test/query.test.js" platform/macos/scripts/create_scheme.sh
 
 $(MACOS_USER_DATA_PATH)/WorkspaceSettings.xcsettings: platform/macos/WorkspaceSettings.xcsettings
 	mkdir -p "$(MACOS_USER_DATA_PATH)"
@@ -127,6 +107,14 @@ run-benchmark: run-benchmark-.
 
 run-benchmark-%: benchmark
 	$(MACOS_OUTPUT_PATH)/$(BUILDTYPE)/mbgl-benchmark --benchmark_filter=$*
+
+.PHONY: node-benchmark
+node-benchmark: $(MACOS_PROJ_PATH)
+	set -o pipefail && $(MACOS_XCODEBUILD) -scheme 'node-benchmark' build $(XCPRETTY)
+
+.PHONY: run-node-benchmark
+run-node-benchmark: node-benchmark
+	node platform/node/test/benchmark.js
 
 .PHONY: glfw-app
 glfw-app: $(MACOS_PROJ_PATH)
@@ -252,11 +240,6 @@ iframework: $(IOS_PROJ_PATH)
 	FORMAT=dynamic BUILD_DEVICE=$(BUILD_DEVICE) SYMBOLS=$(SYMBOLS) \
 	./platform/ios/scripts/package.sh
 
-.PHONY: ifabric
-ifabric: $(IOS_PROJ_PATH)
-	FORMAT=static BUILD_DEVICE=$(BUILD_DEVICE) SYMBOLS=NO SELF_CONTAINED=YES \
-	./platform/ios/scripts/package.sh
-
 .PHONY: ideploy
 ideploy:
 	caffeinate -i ./platform/ios/scripts/deploy-packages.sh
@@ -293,13 +276,17 @@ $(LINUX_BUILD): $(BUILD_DEPS)
 	(cd $(LINUX_OUTPUT_PATH) && cmake -G Ninja ../../.. \
 		-DCMAKE_BUILD_TYPE=$(BUILDTYPE) \
 		-DCMAKE_EXPORT_COMPILE_COMMANDS=ON \
-		-DWITH_CXX11ABI=$(shell scripts/check-cxx11abi.sh) \
+		-DWITH_CXX11ABI=${WITH_CXX11ABI} \
 		-DWITH_COVERAGE=${WITH_COVERAGE} \
 		-DWITH_OSMESA=${WITH_OSMESA} \
 		-DWITH_EGL=${WITH_EGL})
 
 .PHONY: linux
 linux: glfw-app render offline
+
+.PHONY: linux-core
+linux-core: $(LINUX_BUILD)
+	$(NINJA) $(NINJA_ARGS) -j$(JOBS) -C $(LINUX_OUTPUT_PATH) mbgl-core mbgl-loop-uv
 
 .PHONY: test
 test: $(LINUX_BUILD)
@@ -309,8 +296,9 @@ test: $(LINUX_BUILD)
 benchmark: $(LINUX_BUILD)
 	$(NINJA) $(NINJA_ARGS) -j$(JOBS) -C $(LINUX_OUTPUT_PATH) mbgl-benchmark
 
-ifneq (,$(shell which gdb))
-  GDB = gdb -batch -return-child-result -ex 'set print thread-events off' -ex 'run' -ex 'thread apply all bt' --args
+ifneq (,$(shell command -v gdb 2> /dev/null))
+  GDB = $(shell scripts/mason.sh PREFIX gdb VERSION 2017-04-08-aebcde5)/bin/gdb \
+        -batch -return-child-result -ex 'set print thread-events off' -ex 'run' -ex 'thread apply all bt' --args
 endif
 
 .PHONY: run-test
@@ -361,20 +349,23 @@ endif
 
 #### Qt targets #####################################################
 
-ifeq ($(WITH_QT_4), 1)
-QT_ROOT_PATH = build/qt4-$(BUILD_PLATFORM)-$(BUILD_PLATFORM_VERSION)
-else
-QT_ROOT_PATH = build/qt-$(BUILD_PLATFORM)-$(BUILD_PLATFORM_VERSION)
-endif
-
-ifneq (,$(shell which qmake))
-export QT_INSTALL_DOCS = $(shell qmake -query QT_INSTALL_DOCS)
+QT_QMAKE_FOUND := $(shell command -v qmake 2> /dev/null)
+ifdef QT_QMAKE_FOUND
+  export QT_INSTALL_DOCS = $(shell qmake -query QT_INSTALL_DOCS)
+  ifeq ($(shell qmake -query QT_VERSION | head -c1), 4)
+    QT_ROOT_PATH = build/qt4-$(BUILD_PLATFORM)-$(BUILD_PLATFORM_VERSION)
+    WITH_QT_4=1
+  else
+    QT_ROOT_PATH = build/qt-$(BUILD_PLATFORM)-$(BUILD_PLATFORM_VERSION)
+    WITH_QT_4=0
+  endif
 endif
 
 export QT_OUTPUT_PATH = $(QT_ROOT_PATH)/$(BUILDTYPE)
 QT_BUILD = $(QT_OUTPUT_PATH)/build.ninja
 
 $(QT_BUILD): $(BUILD_DEPS)
+	@scripts/check-qt.sh
 	mkdir -p $(QT_OUTPUT_PATH)
 	(cd $(QT_OUTPUT_PATH) && cmake -G Ninja ../../.. \
 		-DCMAKE_BUILD_TYPE=$(BUILDTYPE) \
@@ -392,6 +383,7 @@ ifeq ($(HOST_PLATFORM), macos)
 
 MACOS_QT_PROJ_PATH = $(QT_ROOT_PATH)/xcode/mbgl.xcodeproj
 $(MACOS_QT_PROJ_PATH): $(BUILD_DEPS)
+	@scripts/check-qt.sh
 	mkdir -p $(QT_ROOT_PATH)/xcode
 	(cd $(QT_ROOT_PATH)/xcode && cmake -G Xcode ../../.. \
 		-DMBGL_PLATFORM=qt \
@@ -402,14 +394,6 @@ $(MACOS_QT_PROJ_PATH): $(BUILD_DEPS)
 		-DWITH_QT_4=${WITH_QT_4} \
 		-DWITH_CXX11ABI=$(shell scripts/check-cxx11abi.sh) \
 		-DWITH_COVERAGE=${WITH_COVERAGE})
-
-	@# Create Xcode schemes so that we can use xcodebuild from the command line. CMake doesn't
-	@# create these automatically.
-	XCODEPROJ=$(MACOS_QT_PROJ_PATH) SCHEME_NAME=mbgl-qt SCHEME_TYPE=executable platform/macos/scripts/create_scheme.sh
-	XCODEPROJ=$(MACOS_QT_PROJ_PATH) SCHEME_NAME=mbgl-test SCHEME_TYPE=executable platform/macos/scripts/create_scheme.sh
-	XCODEPROJ=$(MACOS_QT_PROJ_PATH) SCHEME_NAME=mbgl-benchmark SCHEME_TYPE=executable platform/macos/scripts/create_scheme.sh
-	XCODEPROJ=$(MACOS_QT_PROJ_PATH) SCHEME_NAME=mbgl-core SCHEME_TYPE=library BUILDABLE_NAME=libmbgl-core.a BLUEPRINT_NAME=mbgl-core platform/macos/scripts/create_scheme.sh
-	XCODEPROJ=$(MACOS_QT_PROJ_PATH) SCHEME_NAME=qmapboxgl SCHEME_TYPE=library BUILDABLE_NAME=libqmapboxgl.dylib BLUEPRINT_NAME=qmapboxgl platform/macos/scripts/create_scheme.sh
 
 .PHONY: qtproj
 qtproj: $(MACOS_QT_PROJ_PATH)
@@ -492,7 +476,7 @@ style-code: android-style-code
 
 # Configuration file for running CMake from Gradle within Android Studio.
 platform/android/configuration.gradle:
-	@echo "ext {\n    node = '`which node`'\n    npm = '`which npm`'\n    ccache = '`which ccache`'\n}" > $@
+	@echo "ext {\n    node = '`command -v node || command -v nodejs`'\n    npm = '`command -v npm`'\n    ccache = '`command -v ccache`'\n}" > $@
 
 define ANDROID_RULES
 # $1 = arm-v7 (short arch)
@@ -526,10 +510,6 @@ android-core-test-$1: android-test-lib-$1
 run-android-core-test-$1-%: android-core-test-$1
 	# Ensure clean state on the device
 	adb shell "rm -Rf $(MBGL_ANDROID_LOCAL_WORK_DIR) && mkdir -p $(MBGL_ANDROID_LOCAL_WORK_DIR)/test"
-
-	# Generate zipped asset files
-	cd test/fixtures/api && zip -r assets.zip assets && cd -
-	cd test/fixtures/storage && zip -r assets.zip assets && cd -
 
 	# Push all needed files to the device
 	adb push $(MBGL_ANDROID_CORE_TEST_DIR)/test.jar $(MBGL_ANDROID_LOCAL_WORK_DIR) > /dev/null 2>&1
@@ -566,7 +546,7 @@ run-android-ui-test-$1: platform/android/configuration.gradle
 
 run-android-ui-test-$1-%: platform/android/configuration.gradle
 	adb uninstall com.mapbox.mapboxsdk.testapp > /dev/null
-	cd platform/android && $(MBGL_ANDROID_GRADLE) -Pmapbox.abis=$2 :MapboxGLAndroidSDKTestApp:connectedAndroidTest -Pandroid.testInstrumentationRunnerArguments.class="$*"
+	cd platform/android && $(MBGL_ANDROID_GRADLE) -Pmapbox.abis=$2 :MapboxGLAndroidSDKTestApp:connectedAndroidTest -Pandroid.testInstrumentationRunnerArguments.class="$$*"
 
 endef
 

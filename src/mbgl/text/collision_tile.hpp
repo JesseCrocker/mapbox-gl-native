@@ -17,6 +17,7 @@
 #pragma GCC diagnostic ignored "-Wshorten-64-to-32"
 #pragma GCC diagnostic ignored "-Wunused-local-typedefs"
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#pragma GCC diagnostic ignored "-Wmisleading-indentation"
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/point.hpp>
 #include <boost/geometry/geometries/box.hpp>
@@ -28,10 +29,10 @@ namespace mbgl {
 namespace bg = boost::geometry;
 namespace bgm = bg::model;
 namespace bgi = bg::index;
-typedef bgm::point<float, 2, bg::cs::cartesian> CollisionPoint;
-typedef bgm::box<CollisionPoint> Box;
-typedef std::tuple<Box, CollisionBox, IndexedSubfeature> CollisionTreeBox;
-typedef bgi::rtree<CollisionTreeBox, bgi::linear<16, 4>> Tree;
+using CollisionPoint = bgm::point<float, 2, bg::cs::cartesian>;
+using Box = bgm::box<CollisionPoint>;
+using CollisionTreeBox = std::tuple<Box, CollisionBox, IndexedSubfeature>;
+using Tree = bgi::rtree<CollisionTreeBox, bgi::linear<16, 4>>;
 
 class IndexedSubfeature;
 

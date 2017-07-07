@@ -4,7 +4,6 @@
 #import "MGLStyle_Private.h"
 #import "MGLStyleLayer_Private.h"
 
-#include <mbgl/map/map.hpp>
 #include <mbgl/style/layers/custom_layer.hpp>
 #include <mbgl/math/wrap.hpp>
 
@@ -17,7 +16,7 @@
  */
 void MGLPrepareCustomStyleLayer(void *context) {
     MGLOpenGLStyleLayer *layer = (__bridge MGLOpenGLStyleLayer *)context;
-    [layer didMoveToMapView:layer.mapView];
+    [layer didMoveToMapView:layer.style.mapView];
 }
 
 /**
@@ -37,7 +36,7 @@ void MGLDrawCustomStyleLayer(void *context, const mbgl::style::CustomLayerRender
         .pitch = static_cast<CGFloat>(params.pitch),
         .fieldOfView = static_cast<CGFloat>(params.fieldOfView),
     };
-    [layer drawInMapView:layer.mapView withContext:drawingContext];
+    [layer drawInMapView:layer.style.mapView withContext:drawingContext];
 }
 
 /**
@@ -49,7 +48,7 @@ void MGLDrawCustomStyleLayer(void *context, const mbgl::style::CustomLayerRender
  */
 void MGLFinishCustomStyleLayer(void *context) {
     MGLOpenGLStyleLayer *layer = (__bridge MGLOpenGLStyleLayer *)context;
-    [layer willMoveFromMapView:layer.mapView];
+    [layer willMoveFromMapView:layer.style.mapView];
 }
 
 /**
@@ -72,21 +71,19 @@ void MGLFinishCustomStyleLayer(void *context) {
  */
 @interface MGLOpenGLStyleLayer ()
 
-@property (nonatomic) mbgl::style::CustomLayer *rawLayer;
+@property (nonatomic, readonly) mbgl::style::CustomLayer *rawLayer;
 
 /**
- The map view whose style currently contains the layer.
+ The style currently containing the layer.
 
- If the layer is not currently part of any map view’s style, this property is
+ If the layer is not currently part of any style, this property is
  set to `nil`.
  */
-@property (nonatomic, weak, readwrite) MGLMapView *mapView;
+@property (nonatomic, weak, readwrite) MGLStyle *style;
 
 @end
 
-@implementation MGLOpenGLStyleLayer {
-    std::unique_ptr<mbgl::style::CustomLayer> _pendingLayer;
-}
+@implementation MGLOpenGLStyleLayer
 
 /**
  Returns an OpenGL style layer object initialized with the given identifier.
@@ -100,56 +97,38 @@ void MGLFinishCustomStyleLayer(void *context) {
  @return An initialized OpenGL style layer.
  */
 - (instancetype)initWithIdentifier:(NSString *)identifier {
-    if (self = [super initWithIdentifier:identifier]) {
-        auto layer = std::make_unique<mbgl::style::CustomLayer>(identifier.UTF8String,
-                                                                MGLPrepareCustomStyleLayer,
-                                                                MGLDrawCustomStyleLayer,
-                                                                MGLFinishCustomStyleLayer,
-                                                                (__bridge void *)self);
-        _pendingLayer = std::move(layer);
-        self.rawLayer = _pendingLayer.get();
-    }
-    return self;
+    auto layer = std::make_unique<mbgl::style::CustomLayer>(identifier.UTF8String,
+                                                            MGLPrepareCustomStyleLayer,
+                                                            MGLDrawCustomStyleLayer,
+                                                            MGLFinishCustomStyleLayer,
+                                                            (__bridge void *)self);
+    return self = [super initWithPendingLayer:std::move(layer)];
 }
 
 - (mbgl::style::CustomLayer *)rawLayer {
     return (mbgl::style::CustomLayer *)super.rawLayer;
 }
 
-- (void)setRawLayer:(mbgl::style::CustomLayer *)rawLayer {
-    super.rawLayer = rawLayer;
-}
-
 #pragma mark - Adding to and removing from a map view
 
-- (void)setMapView:(MGLMapView *)mapView {
-    if (_mapView && mapView) {
+- (void)setStyle:(MGLStyle *)style {
+    if (_style && style) {
         [NSException raise:@"MGLLayerReuseException"
                     format:@"%@ cannot be added to more than one MGLStyle at a time.", self];
     }
-    _mapView.style.openGLLayers[self.identifier] = nil;
-    _mapView = mapView;
-    _mapView.style.openGLLayers[self.identifier] = self;
+    _style.openGLLayers[self.identifier] = nil;
+    _style = style;
+    _style.openGLLayers[self.identifier] = self;
 }
 
-- (void)addToMapView:(MGLMapView *)mapView belowLayer:(MGLStyleLayer *)otherLayer {
-    self.mapView = mapView;
-    if (otherLayer) {
-        const mbgl::optional<std::string> belowLayerId{ otherLayer.identifier.UTF8String };
-        mapView.mbglMap->addLayer(std::move(_pendingLayer), belowLayerId);
-    } else {
-        mapView.mbglMap->addLayer(std::move(_pendingLayer));
-    }
+- (void)addToStyle:(MGLStyle *)style belowLayer:(MGLStyleLayer *)otherLayer {
+    self.style = style;
+    [super addToStyle:style belowLayer:otherLayer];
 }
 
-- (void)removeFromMapView:(MGLMapView *)mapView {
-    auto removedLayer = mapView.mbglMap->removeLayer(self.identifier.UTF8String);
-    self.mapView = nil;
-    if (!removedLayer) {
-        return;
-    }
-    _pendingLayer = std::move(reinterpret_cast<std::unique_ptr<mbgl::style::CustomLayer> &>(removedLayer));
-    self.rawLayer = _pendingLayer.get();
+- (void)removeFromStyle:(MGLStyle *)style {
+    [super removeFromStyle:style];
+    self.style = nil;
 }
 
 /**
@@ -213,7 +192,7 @@ void MGLFinishCustomStyleLayer(void *context) {
  causing the `-drawInMapView:withContext:` method to be called.
  */
 - (void)setNeedsDisplay {
-    [self.mapView setNeedsGLDisplay];
+    [self.style.mapView setNeedsGLDisplay];
 }
 
 @end

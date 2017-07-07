@@ -1,6 +1,6 @@
 #pragma once
 
-#include <mbgl/text/glyph.hpp>
+#include <mbgl/text/glyph_atlas.hpp>
 #include <mbgl/style/types.hpp>
 #include <mbgl/style/layers/symbol_layer_properties.hpp>
 #include <mbgl/tile/geometry_tile_data.hpp>
@@ -49,12 +49,13 @@ public:
     WritingModeType writingMode;
 };
 
-typedef std::vector<SymbolQuad> SymbolQuads;
+using SymbolQuads = std::vector<SymbolQuad>;
 
 SymbolQuad getIconQuad(const Anchor& anchor,
                        const PositionedIcon& shapedIcon,
                        const GeometryCoordinates& line,
                        const style::SymbolLayoutProperties::Evaluated&,
+                       const float layoutTextSize,
                        style::SymbolPlacementType placement,
                        const Shaping& shapedText);
 
@@ -64,6 +65,6 @@ SymbolQuads getGlyphQuads(Anchor& anchor,
                           const GeometryCoordinates& line,
                           const style::SymbolLayoutProperties::Evaluated&,
                           style::SymbolPlacementType placement,
-                          const GlyphPositions& face);
+                          const GlyphPositionMap& positions);
 
 } // namespace mbgl

@@ -15,22 +15,33 @@
     return self;
 }
 
-- (nullable instancetype)initWithMGLSpriteImage:(const mbgl::SpriteImage *)spriteImage {
-    CGImageRef image = CGImageFromMGLPremultipliedImage(spriteImage->image.clone());
+- (nullable instancetype)initWithMGLStyleImage:(const mbgl::style::Image *)styleImage {
+    CGImageRef image = CGImageFromMGLPremultipliedImage(styleImage->getImage().clone());
     if (!image) {
         return nil;
     }
 
     NSBitmapImageRep *rep = [[NSBitmapImageRep alloc] initWithCGImage:image];
     CGImageRelease(image);
-    if (self = [self initWithSize:NSMakeSize(spriteImage->getWidth(), spriteImage->getHeight())]) {
+    CGFloat w = styleImage->getImage().size.width / styleImage->getPixelRatio();
+    CGFloat h = styleImage->getImage().size.height / styleImage->getPixelRatio();
+    if (self = [self initWithSize:NSMakeSize(w, h)]) {
         [self addRepresentation:rep];
-        [self setTemplate:spriteImage->sdf];
+        [self setTemplate:styleImage->isSdf()];
     }
     return self;
 }
 
-- (std::unique_ptr<mbgl::SpriteImage>)mgl_spriteImage {
+- (std::unique_ptr<mbgl::style::Image>)mgl_styleImageWithIdentifier:(NSString *)identifier {
+    mbgl::PremultipliedImage cPremultipliedImage = self.mgl_premultipliedImage;
+    auto imageWidth = cPremultipliedImage.size.width;
+    return std::make_unique<mbgl::style::Image>([identifier UTF8String],
+                                                std::move(cPremultipliedImage),
+                                                (float)(imageWidth / self.size.width),
+                                                [self isTemplate]);
+}
+
+- (mbgl::PremultipliedImage)mgl_premultipliedImage {
     // Create a bitmap image representation from the image, respecting backing
     // scale factor and any resizing done on the image at runtime.
     // http://www.cocoabuilder.com/archive/cocoa/82430-nsimage-getting-raw-bitmap-data.html#82431
@@ -40,9 +51,6 @@
 
     mbgl::PremultipliedImage cPremultipliedImage({ static_cast<uint32_t>(rep.pixelsWide), static_cast<uint32_t>(rep.pixelsHigh) });
     std::copy(rep.bitmapData, rep.bitmapData + cPremultipliedImage.bytes(), cPremultipliedImage.data.get());
-    return std::make_unique<mbgl::SpriteImage>(std::move(cPremultipliedImage),
-                                               (float)(rep.pixelsWide / self.size.width),
-                                               [self isTemplate]);
+    return cPremultipliedImage;
 }
-
 @end

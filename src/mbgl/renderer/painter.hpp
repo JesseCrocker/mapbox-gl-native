@@ -7,18 +7,21 @@
 #include <mbgl/renderer/frame_history.hpp>
 #include <mbgl/renderer/render_item.hpp>
 #include <mbgl/renderer/bucket.hpp>
+#include <mbgl/renderer/render_light.hpp>
 
 #include <mbgl/gl/context.hpp>
 #include <mbgl/programs/debug_program.hpp>
 #include <mbgl/programs/program_parameters.hpp>
 #include <mbgl/programs/fill_program.hpp>
+#include <mbgl/programs/extrusion_texture_program.hpp>
 #include <mbgl/programs/raster_program.hpp>
-
-#include <mbgl/style/style.hpp>
 
 #include <mbgl/util/noncopyable.hpp>
 #include <mbgl/util/chrono.hpp>
 #include <mbgl/util/constants.hpp>
+#include <mbgl/util/offscreen_texture.hpp>
+
+#include <mbgl/algorithm/generate_clip_ids.hpp>
 
 #include <array>
 #include <vector>
@@ -27,36 +30,35 @@
 
 namespace mbgl {
 
+class RenderStyle;
 class RenderTile;
-class SpriteAtlas;
+class ImageManager;
 class View;
-class GlyphAtlas;
 class LineAtlas;
 struct FrameData;
 class Tile;
 
 class DebugBucket;
 class FillBucket;
+class FillExtrusionBucket;
 class LineBucket;
 class CircleBucket;
 class SymbolBucket;
 class RasterBucket;
 
+class RenderFillLayer;
+class RenderFillExtrusionLayer;
+class RenderLineLayer;
+class RenderCircleLayer;
+class RenderSymbolLayer;
+class RenderRasterLayer;
+class RenderBackgroundLayer;
+
 class Programs;
 class PaintParameters;
+class TilePyramid;
 
 struct ClipID;
-
-namespace style {
-class Style;
-class Source;
-class FillLayer;
-class LineLayer;
-class CircleLayer;
-class SymbolLayer;
-class RasterLayer;
-class BackgroundLayer;
-} // namespace style
 
 struct FrameData {
     TimePoint timePoint;
@@ -68,24 +70,27 @@ struct FrameData {
 
 class Painter : private util::noncopyable {
 public:
-    Painter(gl::Context&, const TransformState&, float pixelRatio);
+    Painter(gl::Context&, const TransformState&, float pixelRatio, const optional<std::string>& programCacheDir);
     ~Painter();
 
-    void render(const style::Style&,
+    void render(RenderStyle&,
                 const FrameData&,
-                View&,
-                SpriteAtlas& annotationSpriteAtlas);
+                View&);
 
     void cleanup();
 
     void renderClippingMask(const UnwrappedTileID&, const ClipID&);
     void renderTileDebug(const RenderTile&);
-    void renderFill(PaintParameters&, FillBucket&, const style::FillLayer&, const RenderTile&);
-    void renderLine(PaintParameters&, LineBucket&, const style::LineLayer&, const RenderTile&);
-    void renderCircle(PaintParameters&, CircleBucket&, const style::CircleLayer&, const RenderTile&);
-    void renderSymbol(PaintParameters&, SymbolBucket&, const style::SymbolLayer&, const RenderTile&);
-    void renderRaster(PaintParameters&, RasterBucket&, const style::RasterLayer&, const RenderTile&);
-    void renderBackground(PaintParameters&, const style::BackgroundLayer&);
+    void renderTileDebug(const mat4& matrix);
+    void renderFill(PaintParameters&, FillBucket&, const RenderFillLayer&, const RenderTile&);
+    void renderFillExtrusion(PaintParameters&, FillExtrusionBucket&, const RenderFillExtrusionLayer&, const RenderTile&);
+    void renderLine(PaintParameters&, LineBucket&, const RenderLineLayer&, const RenderTile&);
+    void renderCircle(PaintParameters&, CircleBucket&, const RenderCircleLayer&, const RenderTile&);
+    void renderSymbol(PaintParameters&, SymbolBucket&, const RenderSymbolLayer&, const RenderTile&);
+    void renderRaster(PaintParameters&, RasterBucket&, const RenderRasterLayer&, const mat4&, bool useBucketBuffers /* = false */);
+    void renderBackground(PaintParameters&, const RenderBackgroundLayer&);
+
+    void renderItem(PaintParameters&, const RenderItem&);
 
 #ifndef NDEBUG
     // Renders tile clip boundaries, using stencil buffer to calculate fill color.
@@ -95,9 +100,6 @@ public:
 #endif
 
     bool needsAnimation() const;
-
-private:
-    std::vector<RenderItem> determineRenderOrder(const style::Style&);
 
     template <class Iterator>
     void renderPass(PaintParameters&,
@@ -121,10 +123,12 @@ private:
     }
 #endif
 
-private:
     gl::Context& context;
 
+    algorithm::ClipIDGenerator clipIDGenerator;
+
     mat4 projMatrix;
+    mat4 nearClippedProjMatrix;
 
     std::array<float, 2> pixelsToGLUnits;
 
@@ -147,9 +151,12 @@ private:
     float depthRangeSize;
     const float depthEpsilon = 1.0f / (1 << 16);
 
-    SpriteAtlas* spriteAtlas = nullptr;
-    GlyphAtlas* glyphAtlas = nullptr;
+    ImageManager* imageManager = nullptr;
     LineAtlas* lineAtlas = nullptr;
+
+    optional<OffscreenTexture> extrusionTexture;
+
+    EvaluatedLight evaluatedLight;
 
     FrameHistory frameHistory;
 
@@ -160,13 +167,15 @@ private:
 
     gl::VertexBuffer<FillLayoutVertex> tileVertexBuffer;
     gl::VertexBuffer<RasterLayoutVertex> rasterVertexBuffer;
+    gl::VertexBuffer<ExtrusionTextureLayoutVertex> extrusionTextureVertexBuffer;
 
-    gl::IndexBuffer<gl::Triangles> tileTriangleIndexBuffer;
+    gl::IndexBuffer<gl::Triangles> quadTriangleIndexBuffer;
     gl::IndexBuffer<gl::LineStrip> tileBorderIndexBuffer;
 
     gl::SegmentVector<FillAttributes> tileTriangleSegments;
     gl::SegmentVector<DebugAttributes> tileBorderSegments;
     gl::SegmentVector<RasterAttributes> rasterSegments;
+    gl::SegmentVector<ExtrusionTextureAttributes> extrusionTextureSegments;
 };
 
 } // namespace mbgl

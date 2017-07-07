@@ -1,3 +1,26 @@
+# 3.5.4 - June 6, 2017
+- Add support for ImageSource [#8968](https://github.com/mapbox/mapbox-gl-native/pull/8968)
+- Fixed an issue with `map.addImage()` which would cause added images to randomly be replaced with images found the style's sprite sheet ([#9119](https://github.com/mapbox/mapbox-gl-native/pull/9119))
+
+# 3.5.3 - May 30, 2017
+
+- Fixed a regression around `line-dasharrary` and `fill-pattern` that caused these properties to sometimes not render correctly ([#9130](https://github.com/mapbox/mapbox-gl-native/pull/9130))
+
+# 3.5.2 - May 18, 2017
+
+- Fixed a memory leak ([#8884](https://github.com/mapbox/mapbox-gl-native/pull/9035))
+
+
+# 3.5.1 - May 8, 2017
+
+- Adds Node v6 binaries. **Note, Node v4 binaries will be removed on August 1st.** ([#8884](https://github.com/mapbox/mapbox-gl-native/pull/8884))
+- Adds linux debug binaries ([#8865](https://github.com/mapbox/mapbox-gl-native/pull/8865))
+
+# 3.5.0 - April 20, 2017
+
+- Fixed an issue where raster tiles that were not found caused `map.render()` to hang ([#8769](https://github.com/mapbox/mapbox-gl-native/pull/8769))
+- Adds method `map.cancel()` which cancels an ongoing `render` call. ([#8249](https://github.com/mapbox/mapbox-gl-native/pull/8249))
+
 # 3.4.7 - March 15, 2017
 
 - Fixed MacOS Release builds ([8409](https://github.com/mapbox/mapbox-gl-native/pull/8409))

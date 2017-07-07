@@ -1,16 +1,25 @@
 #include <mbgl/style/source.hpp>
 #include <mbgl/style/source_impl.hpp>
+#include <mbgl/style/source_observer.hpp>
+#include <mbgl/util/logging.hpp>
 
 namespace mbgl {
 namespace style {
 
-Source::Source(SourceType type_, std::unique_ptr<Impl> baseImpl_)
-    : baseImpl(std::move(baseImpl_)), type(type_) {
+static SourceObserver nullObserver;
+
+Source::Source(Immutable<Impl> impl)
+    : baseImpl(std::move(impl)),
+      observer(&nullObserver) {
 }
 
 Source::~Source() = default;
 
-const std::string& Source::getID() const {
+SourceType Source::getType() const {
+    return baseImpl->type;
+}
+
+std::string Source::getID() const {
     return baseImpl->id;
 }
 
@@ -18,12 +27,13 @@ optional<std::string> Source::getAttribution() const {
     return baseImpl->getAttribution();
 }
 
-Range<uint8_t> Source::getZoomRange() const {
-    return baseImpl->getZoomRange();
+void Source::setObserver(SourceObserver* observer_) {
+    observer = observer_ ? observer_ : &nullObserver;
 }
 
-std::vector<Feature> Source::querySourceFeatures(const SourceQueryOptions& options) {
-    return baseImpl->querySourceFeatures(options);
+void Source::dumpDebugLogs() const {
+    Log::Info(Event::General, "Source::id: %s", getID().c_str());
+    Log::Info(Event::General, "Source::loaded: %d", loaded);
 }
 
 } // namespace style

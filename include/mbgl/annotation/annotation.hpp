@@ -31,7 +31,7 @@ class LineAnnotation {
 public:
     ShapeAnnotationGeometry geometry;
     style::DataDrivenPropertyValue<float> opacity { 1.0f };
-    style::PropertyValue<float> width { 1.0f };
+    style::DataDrivenPropertyValue<float> width { 1.0f };
     style::DataDrivenPropertyValue<Color> color { Color::black() };
 };
 
@@ -43,17 +43,9 @@ public:
     style::DataDrivenPropertyValue<Color> outlineColor {};
 };
 
-// An annotation whose type and properties are sourced from a style layer.
-class StyleSourcedAnnotation {
-public:
-    ShapeAnnotationGeometry geometry;
-    std::string layerID;
-};
-
 using Annotation = variant<
     SymbolAnnotation,
     LineAnnotation,
-    FillAnnotation,
-    StyleSourcedAnnotation>;
+    FillAnnotation>;
 
 } // namespace mbgl

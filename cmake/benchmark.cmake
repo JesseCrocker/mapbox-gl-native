@@ -7,8 +7,7 @@ target_compile_options(mbgl-benchmark
 )
 
 target_include_directories(mbgl-benchmark
-    PRIVATE include
-    PRIVATE src # TODO: eliminate
+    PRIVATE src
     PRIVATE benchmark/include
     PRIVATE benchmark/src
     PRIVATE platform/default
@@ -20,7 +19,16 @@ target_link_libraries(mbgl-benchmark
 
 target_add_mason_package(mbgl-benchmark PRIVATE benchmark)
 target_add_mason_package(mbgl-benchmark PRIVATE rapidjson)
+target_add_mason_package(mbgl-benchmark PRIVATE protozero)
+target_add_mason_package(mbgl-benchmark PRIVATE vector-tile)
 
 mbgl_platform_benchmark()
 
 create_source_groups(mbgl-benchmark)
+
+xcode_create_scheme(
+    TARGET mbgl-benchmark
+    OPTIONAL_ARGS
+        "--benchmark_filter=Category.*"
+        "--benchmark_repetitions=1"
+)

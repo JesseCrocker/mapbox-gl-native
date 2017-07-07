@@ -2,8 +2,11 @@
 
 #include <mbgl/tile/tile.hpp>
 #include <mbgl/tile/geometry_tile_worker.hpp>
+#include <mbgl/renderer/image_manager.hpp>
+#include <mbgl/text/glyph_manager.hpp>
 #include <mbgl/text/placement_config.hpp>
 #include <mbgl/util/feature.hpp>
+#include <mbgl/util/throttler.hpp>
 #include <mbgl/actor/actor.hpp>
 
 #include <atomic>
@@ -16,19 +19,18 @@ namespace mbgl {
 class GeometryTileData;
 class FeatureIndex;
 class CollisionTile;
-
-namespace style {
-class Style;
-class Layer;
-class UpdateParameters;
+class RenderStyle;
+class RenderLayer;
 class SourceQueryOptions;
-} // namespace style
+class TileParameters;
+class GlyphAtlas;
+class ImageAtlas;
 
-class GeometryTile : public Tile {
+class GeometryTile : public Tile, public GlyphRequestor, ImageRequestor {
 public:
     GeometryTile(const OverscaledTileID&,
                  std::string sourceID,
-                 const style::UpdateParameters&);
+                 const TileParameters&);
 
     ~GeometryTile() override;
 
@@ -36,20 +38,30 @@ public:
     void setData(std::unique_ptr<const GeometryTileData>);
 
     void setPlacementConfig(const PlacementConfig&) override;
-    void symbolDependenciesChanged() override;
-    void redoLayout() override;
+    void setLayers(const std::vector<Immutable<style::Layer::Impl>>&) override;
+    
+    void onGlyphsAvailable(GlyphMap) override;
+    void onImagesAvailable(ImageMap) override;
+    
+    void getGlyphs(GlyphDependencies);
+    void getImages(ImageDependencies);
 
-    Bucket* getBucket(const style::Layer&) override;
+    void upload(gl::Context&) override;
+    Bucket* getBucket(const style::Layer::Impl&) const override;
+
+    Size bindGlyphAtlas(gl::Context&);
+    Size bindIconAtlas(gl::Context&);
 
     void queryRenderedFeatures(
             std::unordered_map<std::string, std::vector<Feature>>& result,
             const GeometryCoordinates& queryGeometry,
             const TransformState&,
+            const RenderStyle&,
             const RenderedQueryOptions& options) override;
 
     void querySourceFeatures(
         std::vector<Feature>& result,
-        const style::SourceQueryOptions&) override;
+        const SourceQueryOptions&) override;
 
     void cancel() override;
 
@@ -66,6 +78,8 @@ public:
     public:
         std::unordered_map<std::string, std::shared_ptr<Bucket>> symbolBuckets;
         std::unique_ptr<CollisionTile> collisionTile;
+        optional<AlphaImage> glyphAtlasImage;
+        optional<PremultipliedImage> iconAtlasImage;
         uint64_t correlationID;
     };
     void onPlacement(PlacementResult);
@@ -78,14 +92,19 @@ protected:
     }
 
 private:
+    void markObsolete();
+    void invokePlacement();
+
     const std::string sourceID;
-    style::Style& style;
 
     // Used to signal the worker that it should abandon parsing this tile as soon as possible.
     std::atomic<bool> obsolete { false };
 
     std::shared_ptr<Mailbox> mailbox;
     Actor<GeometryTileWorker> worker;
+
+    GlyphManager& glyphManager;
+    ImageManager& imageManager;
 
     uint64_t correlationID = 0;
     optional<PlacementConfig> requestedConfig;
@@ -94,8 +113,17 @@ private:
     std::unique_ptr<FeatureIndex> featureIndex;
     std::unique_ptr<const GeometryTileData> data;
 
+    optional<AlphaImage> glyphAtlasImage;
+    optional<PremultipliedImage> iconAtlasImage;
+
     std::unordered_map<std::string, std::shared_ptr<Bucket>> symbolBuckets;
     std::unique_ptr<CollisionTile> collisionTile;
+    
+    util::Throttler placementThrottler;
+
+public:
+    optional<gl::Texture> glyphAtlasTexture;
+    optional<gl::Texture> iconAtlasTexture;
 };
 
 } // namespace mbgl

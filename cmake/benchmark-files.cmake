@@ -3,12 +3,14 @@
 set(MBGL_BENCHMARK_FILES
     # api
     benchmark/api/query.benchmark.cpp
+    benchmark/api/render.benchmark.cpp
 
     # include/mbgl
     benchmark/include/mbgl/benchmark.hpp
 
     # parse
     benchmark/parse/filter.benchmark.cpp
+    benchmark/parse/vector_tile.benchmark.cpp
 
     # src
     benchmark/src/main.cpp

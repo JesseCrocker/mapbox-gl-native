@@ -17,6 +17,8 @@ module.exports = function (style, options, callback) {
             request(req.url, {encoding: null}, function (err, response, body) {
                 if (err) {
                     callback(err);
+                } else if (response.statusCode == 404) {
+                    callback();
                 } else if (response.statusCode != 200) {
                     callback(new Error(response.statusMessage));
                 } else {
@@ -68,16 +70,21 @@ module.exports = function (style, options, callback) {
                 applyOperations(operations.slice(1), callback);
             });
 
-        } else if (operation[0] === 'addImage') {
+        } else if (operation[0] === 'addImage' || operation[0] === 'updateImage') {
             var img = PNG.sync.read(fs.readFileSync(path.join(__dirname, '../../../mapbox-gl-js/test/integration', operation[2])));
 
             map.addImage(operation[1], img.data, {
                 height: img.height,
                 width: img.width,
-                pixelRatio: 1
+                pixelRatio: operation[3] || 1
             });
 
             applyOperations(operations.slice(1), callback);
+
+        } else if (operation[0] === 'setStyle') {
+            map.load(operation[1]);
+            applyOperations(operations.slice(1), callback);
+
         } else {
             // Ensure that the next `map.render(options)` does not overwrite this change.
             if (operation[0] === 'setCenter') {

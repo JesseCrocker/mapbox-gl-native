@@ -3,11 +3,13 @@
 #include <mbgl/test/util.hpp>
 
 #include <mbgl/map/map.hpp>
+#include <mbgl/map/backend_scope.hpp>
 #include <mbgl/gl/headless_backend.hpp>
 #include <mbgl/gl/offscreen_view.hpp>
 #include <mbgl/util/default_thread_pool.hpp>
 #include <mbgl/util/io.hpp>
 #include <mbgl/util/run_loop.hpp>
+#include <mbgl/style/style.hpp>
 
 #include <algorithm>
 #include <iostream>
@@ -16,7 +18,7 @@
 #include <unordered_map>
 #include <utility>
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <unistd.h>
 
 using namespace mbgl;
@@ -35,6 +37,7 @@ public:
 
     util::RunLoop runLoop;
     HeadlessBackend backend { test::sharedDisplay() };
+    BackendScope scope { backend };
     OffscreenView view{ backend.getContext(), { 512, 512 } };
     StubFileSource fileSource;
     ThreadPool threadPool { 4 };
@@ -73,7 +76,7 @@ TEST(Memory, Vector) {
 
     Map map(test.backend, { 256, 256 }, 2, test.fileSource, test.threadPool, MapMode::Still);
     map.setZoom(16); // more map features
-    map.setStyleURL("mapbox://streets");
+    map.getStyle().loadURL("mapbox://streets");
 
     test::render(map, test.view);
 }
@@ -82,7 +85,7 @@ TEST(Memory, Raster) {
     MemoryTest test;
 
     Map map(test.backend, { 256, 256 }, 2, test.fileSource, test.threadPool, MapMode::Still);
-    map.setStyleURL("mapbox://satellite");
+    map.getStyle().loadURL("mapbox://satellite");
 
     test::render(map, test.view);
 }
@@ -116,7 +119,7 @@ TEST(Memory, Footprint) {
 
     auto renderMap = [&](Map& map, const char* style){
         map.setZoom(16);
-        map.setStyleURL(style);
+        map.getStyle().loadURL(style);
         test::render(map, test.view);
     };
 
@@ -157,7 +160,7 @@ TEST(Memory, Footprint) {
     RecordProperty("vectorFootprint", vectorFootprint);
     RecordProperty("rasterFootprint", rasterFootprint);
 
-    ASSERT_LT(vectorFootprint, 65.2 * 1024 * 1024) << "\
+    ASSERT_LT(vectorFootprint, 40 * 1024 * 1024) << "\
         mbgl::Map footprint over 65.2MB for vector styles.";
 
     ASSERT_LT(rasterFootprint, 25 * 1024 * 1024) << "\

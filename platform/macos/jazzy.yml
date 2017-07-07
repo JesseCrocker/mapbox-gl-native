@@ -19,6 +19,8 @@ custom_categories:
     children:
       - Working with GeoJSON Data
       - For Style Authors
+      - Using Style Functions at Runtime
+      - Tile URL Templates
       - Info.plist Keys
   - name: Maps
     children:
@@ -26,7 +28,6 @@ custom_categories:
       - MGLMapCamera
       - MGLMapView
       - MGLMapViewDelegate
-      - MGLUserTrackingMode
   - name: Shapes and Annotations
     children:
       - MGLAnnotation
@@ -45,6 +46,7 @@ custom_categories:
     children:
       - MGLStyle
       - MGLStyleValue
+      - MGLLight
   - name: Content Primitives
     children:
       - MGLFeature
@@ -73,6 +75,7 @@ custom_categories:
       - MGLVectorStyleLayer
       - MGLCircleStyleLayer
       - MGLFillStyleLayer
+      - MGLFillExtrusionStyleLayer
       - MGLLineStyleLayer
       - MGLSymbolStyleLayer
   - name: Offline Maps

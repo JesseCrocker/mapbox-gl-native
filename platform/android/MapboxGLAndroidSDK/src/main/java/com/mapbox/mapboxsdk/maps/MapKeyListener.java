@@ -1,6 +1,8 @@
 package com.mapbox.mapboxsdk.maps;
 
+import android.graphics.PointF;
 import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
@@ -125,7 +127,8 @@ final class MapKeyListener {
         }
 
         // Zoom out
-        transform.zoom(false, uiSettings.getWidth() / 2, uiSettings.getHeight() / 2);
+        PointF focalPoint = new PointF(uiSettings.getWidth() / 2, uiSettings.getHeight() / 2);
+        transform.zoom(false, focalPoint);
         return true;
 
       default:
@@ -160,7 +163,8 @@ final class MapKeyListener {
         }
 
         // Zoom in
-        transform.zoom(true, uiSettings.getWidth() / 2, uiSettings.getHeight() / 2);
+        PointF focalPoint = new PointF(uiSettings.getWidth() / 2, uiSettings.getHeight() / 2);
+        transform.zoom(true, focalPoint);
         return true;
     }
 
@@ -201,7 +205,7 @@ final class MapKeyListener {
           currentTrackballLongPressTimeOut = null;
         }
         currentTrackballLongPressTimeOut = new TrackballLongPressTimeOut();
-        new Handler().postDelayed(currentTrackballLongPressTimeOut,
+        new Handler(Looper.getMainLooper()).postDelayed(currentTrackballLongPressTimeOut,
           ViewConfiguration.getLongPressTimeout());
         return true;
 
@@ -214,7 +218,8 @@ final class MapKeyListener {
         // Only handle if we have not already long pressed
         if (currentTrackballLongPressTimeOut != null) {
           // Zoom in
-          transform.zoom(true, uiSettings.getWidth() / 2, uiSettings.getHeight() / 2);
+          PointF focalPoint = new PointF(uiSettings.getWidth() / 2, uiSettings.getHeight() / 2);
+          transform.zoom(true, focalPoint);
         }
         return true;
 
@@ -255,7 +260,8 @@ final class MapKeyListener {
       // Check if the trackball is still pressed
       if (!cancelled) {
         // Zoom out
-        transform.zoom(false, uiSettings.getWidth() / 2, uiSettings.getHeight() / 2);
+        PointF pointF = new PointF(uiSettings.getWidth() / 2, uiSettings.getHeight() / 2);
+        transform.zoom(false, pointF);
 
         // Ensure the up action is not run
         currentTrackballLongPressTimeOut = null;

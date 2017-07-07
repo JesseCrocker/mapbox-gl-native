@@ -5,7 +5,6 @@
 #include <mbgl/util/optional.hpp>
 #include <mbgl/util/logging.hpp>
 
-#include <mutex>
 #include <cstddef>
 #include <vector>
 
@@ -47,17 +46,13 @@ public:
             }
         } else {
             // No VAO support. Force attributes to be rebound.
-            static std::once_flag reportedOnce;
-            std::call_once(reportedOnce, [] {
-                Log::Warning(Event::OpenGL, "Not using Vertex Array Objects");
-            });
             context.elementBuffer = indexBuffer_;
-            variableBindings = {};
+            attributeBindings = {};
         }
 
         Attributes::bind(context,
                          attributeLocations,
-                         variableBindings,
+                         attributeBindings,
                          attributeBindings_,
                          vertexOffset);
     }
@@ -65,7 +60,7 @@ public:
 private:
     mutable optional<UniqueVertexArray> vao;
     mutable optional<BufferID> indexBuffer;
-    mutable typename Attributes::VariableBindings variableBindings;
+    mutable typename Attributes::Bindings attributeBindings;
 };
 
 template <class Attributes>

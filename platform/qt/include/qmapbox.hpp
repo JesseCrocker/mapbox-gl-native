@@ -62,11 +62,6 @@ struct Q_DECL_EXPORT FillAnnotation {
     QVariant outlineColor;
 };
 
-struct Q_DECL_EXPORT StyleSourcedAnnotation {
-    ShapeAnnotationGeometry geometry;
-    QString layerID;
-};
-
 typedef QVariant Annotation;
 typedef quint32 AnnotationID;
 typedef QList<AnnotationID> AnnotationIDs;
@@ -97,8 +92,6 @@ typedef void (*CustomLayerInitializeFunction)(void* context) ;
 typedef void (*CustomLayerRenderFunction)(void* context, const CustomLayerRenderParameters&);
 typedef void (*CustomLayerDeinitializeFunction)(void* context);
 
-Q_DECL_EXPORT void initializeGLExtensions();
-
 } // namespace QMapbox
 
 Q_DECLARE_METATYPE(QMapbox::Coordinate);
@@ -111,6 +104,5 @@ Q_DECLARE_METATYPE(QMapbox::SymbolAnnotation);
 Q_DECLARE_METATYPE(QMapbox::ShapeAnnotationGeometry);
 Q_DECLARE_METATYPE(QMapbox::LineAnnotation);
 Q_DECLARE_METATYPE(QMapbox::FillAnnotation);
-Q_DECLARE_METATYPE(QMapbox::StyleSourcedAnnotation);
 
 #endif // QMAPBOX_H

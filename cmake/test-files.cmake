@@ -19,9 +19,6 @@ set(MBGL_TEST_FILES
     test/api/render_missing.test.cpp
     test/api/repeated_render.test.cpp
 
-    # geometry
-    test/geometry/binpack.test.cpp
-
     # gl
     test/gl/bucket.test.cpp
     test/gl/object.test.cpp
@@ -31,6 +28,7 @@ set(MBGL_TEST_FILES
 
     # map
     test/map/map.test.cpp
+    test/map/prefetch.test.cpp
     test/map/transform.test.cpp
 
     # math
@@ -38,9 +36,16 @@ set(MBGL_TEST_FILES
     test/math/minmax.test.cpp
     test/math/wrap.test.cpp
 
+    # programs
+    test/programs/binary_program.test.cpp
+    test/programs/symbol_program.test.cpp
+
+    # renderer
+    test/renderer/group_by_layout.test.cpp
+    test/renderer/image_manager.test.cpp
+
     # sprite
-    test/sprite/sprite_atlas.test.cpp
-    test/sprite/sprite_image.test.cpp
+    test/sprite/sprite_loader.test.cpp
     test/sprite/sprite_parser.test.cpp
 
     # src/mbgl/test
@@ -54,6 +59,7 @@ set(MBGL_TEST_FILES
     test/src/mbgl/test/stub_file_source.hpp
     test/src/mbgl/test/stub_geometry_tile_feature.hpp
     test/src/mbgl/test/stub_layer_observer.hpp
+    test/src/mbgl/test/stub_render_source_observer.hpp
     test/src/mbgl/test/stub_style_observer.hpp
     test/src/mbgl/test/stub_tile_observer.hpp
     test/src/mbgl/test/test.cpp
@@ -77,6 +83,7 @@ set(MBGL_TEST_FILES
     test/style/conversion/function.test.cpp
     test/style/conversion/geojson_options.test.cpp
     test/style/conversion/layer.test.cpp
+    test/style/conversion/light.test.cpp
     test/style/conversion/stringify.test.cpp
 
     # style
@@ -85,19 +92,21 @@ set(MBGL_TEST_FILES
 
     # style/function
     test/style/function/camera_function.test.cpp
+    test/style/function/composite_function.test.cpp
+    test/style/function/exponential_stops.test.cpp
+    test/style/function/interval_stops.test.cpp
     test/style/function/source_function.test.cpp
 
     # style
-    test/style/group_by_layout.test.cpp
-    test/style/paint_property.test.cpp
+    test/style/properties.test.cpp
     test/style/source.test.cpp
     test/style/style.test.cpp
+    test/style/style_image.test.cpp
     test/style/style_layer.test.cpp
     test/style/style_parser.test.cpp
-    test/style/tile_source.test.cpp
 
     # text
-    test/text/glyph_atlas.test.cpp
+    test/text/glyph_loader.test.cpp
     test/text/glyph_pbf.test.cpp
     test/text/quads.test.cpp
 
@@ -120,6 +129,7 @@ set(MBGL_TEST_FILES
     test/util/merge_lines.test.cpp
     test/util/number_conversions.test.cpp
     test/util/offscreen_texture.test.cpp
+    test/util/position.test.cpp
     test/util/projection.test.cpp
     test/util/run_loop.test.cpp
     test/util/text_conversions.test.cpp
@@ -129,5 +139,4 @@ set(MBGL_TEST_FILES
     test/util/timer.test.cpp
     test/util/token.test.cpp
     test/util/url.test.cpp
-    test/util/work_queue.test.cpp
 )

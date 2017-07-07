@@ -6,8 +6,9 @@
 #include <mbgl/util/platform.hpp>
 #include <mbgl/util/default_thread_pool.hpp>
 #include <mbgl/storage/default_file_source.hpp>
+#include <mbgl/style/style.hpp>
 
-#include <signal.h>
+#include <csignal>
 #include <getopt.h>
 #include <fstream>
 #include <sstream>
@@ -19,7 +20,7 @@ namespace {
 
 GLFWView* view = nullptr;
 
-}
+} // namespace
 
 void quit_handler(int) {
     if (view) {
@@ -39,15 +40,15 @@ int main(int argc, char *argv[]) {
     bool skipConfig = false;
 
     const struct option long_options[] = {
-        {"fullscreen", no_argument, 0, 'f'},
-        {"benchmark", no_argument, 0, 'b'},
-        {"style", required_argument, 0, 's'},
-        {"lon", required_argument, 0, 'x'},
-        {"lat", required_argument, 0, 'y'},
-        {"zoom", required_argument, 0, 'z'},
-        {"bearing", required_argument, 0, 'r'},
-        {"pitch", required_argument, 0, 'p'},
-        {0, 0, 0, 0}
+        {"fullscreen", no_argument, nullptr, 'f'},
+        {"benchmark", no_argument, nullptr, 'b'},
+        {"style", required_argument, nullptr, 's'},
+        {"lon", required_argument, nullptr, 'x'},
+        {"lat", required_argument, nullptr, 'y'},
+        {"zoom", required_argument, nullptr, 'z'},
+        {"bearing", required_argument, nullptr, 'r'},
+        {"pitch", required_argument, nullptr, 'p'},
+        {nullptr, 0, nullptr, 0}
     };
 
     while (true) {
@@ -57,7 +58,7 @@ int main(int argc, char *argv[]) {
         switch (opt)
         {
         case 0:
-            if (long_options[option_index].flag != 0)
+            if (long_options[option_index].flag != nullptr)
                 break;
         case 'f':
             fullscreen = true;
@@ -99,7 +100,7 @@ int main(int argc, char *argv[]) {
     sigIntHandler.sa_handler = quit_handler;
     sigemptyset(&sigIntHandler.sa_mask);
     sigIntHandler.sa_flags = 0;
-    sigaction(SIGINT, &sigIntHandler, NULL);
+    sigaction(SIGINT, &sigIntHandler, nullptr);
 
     if (benchmark) {
         mbgl::Log::Info(mbgl::Event::General, "BENCHMARK MODE: Some optimizations are disabled.");
@@ -147,7 +148,7 @@ int main(int argc, char *argv[]) {
         }
 
         mbgl::util::default_styles::DefaultStyle newStyle = mbgl::util::default_styles::orderedStyles[currentStyleIndex];
-        map.setStyleURL(newStyle.url);
+        map.getStyle().loadURL(newStyle.url);
         view->setWindowTitle(newStyle.name);
 
         mbgl::Log::Info(mbgl::Event::Setup, "Changed style to: %s", newStyle.name);
@@ -178,14 +179,14 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    map.setStyleURL(style);
+    map.getStyle().loadURL(style);
 
     view->run();
 
     // Save settings
     mbgl::LatLng latLng = map.getLatLng();
-    settings.latitude = latLng.latitude;
-    settings.longitude = latLng.longitude;
+    settings.latitude = latLng.latitude();
+    settings.longitude = latLng.longitude();
     settings.zoom = map.getZoom();
     settings.bearing = map.getBearing();
     settings.pitch = map.getPitch();
@@ -194,7 +195,7 @@ int main(int argc, char *argv[]) {
         settings.save();
     }
     mbgl::Log::Info(mbgl::Event::General,
-                    "Exit location: --lat=\"%f\" --lon=\"%f\" --zoom=\"%f\" --bearing \"%f\"",
+                    R"(Exit location: --lat="%f" --lon="%f" --zoom="%f" --bearing "%f")",
                     settings.latitude, settings.longitude, settings.zoom, settings.bearing);
 
     view = nullptr;

@@ -36,6 +36,9 @@ set(MBGL_QT_FILES
     PRIVATE platform/default/mbgl/util/default_thread_pool.cpp
     PRIVATE platform/default/mbgl/util/default_thread_pool.hpp
 
+    # Thread
+    PRIVATE platform/qt/src/thread_local.cpp
+
     # Platform integration
     PRIVATE platform/qt/src/async_task.cpp
     PRIVATE platform/qt/src/async_task_impl.hpp
@@ -76,6 +79,8 @@ add_executable(mbgl-qt
     platform/qt/resources/common.qrc
 )
 
+xcode_create_scheme(TARGET mbgl-qt)
+
 if(WITH_QT_4)
     include(platform/qt/qt4.cmake)
 else()
@@ -91,12 +96,16 @@ if (MASON_PLATFORM STREQUAL "osx" OR MASON_PLATFORM STREQUAL "ios")
         PRIVATE "-framework Foundation"
         PRIVATE "-framework OpenGL"
     )
-else()
+elseif (CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
     list(APPEND MBGL_QT_FILES
         PRIVATE platform/default/thread.cpp
     )
     list(APPEND MBGL_QT_LIBRARIES
         PRIVATE -lGL
+    )
+elseif (CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
+    list(APPEND MBGL_QT_FILES
+        PRIVATE platform/qt/src/thread.cpp
     )
 endif()
 
@@ -107,3 +116,5 @@ add_custom_command(
             ${CMAKE_SOURCE_DIR}/platform/qt/include
             ${CMAKE_CURRENT_BINARY_DIR}/platform/qt/include
 )
+
+xcode_create_scheme(TARGET qmapboxgl)

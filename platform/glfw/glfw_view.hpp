@@ -1,6 +1,5 @@
 #pragma once
 
-#include <mbgl/gl/gl.hpp>
 #include <mbgl/map/map.hpp>
 #include <mbgl/map/view.hpp>
 #include <mbgl/map/backend.hpp>
@@ -8,11 +7,7 @@
 #include <mbgl/util/timer.hpp>
 #include <mbgl/util/geometry.hpp>
 
-#if MBGL_USE_GLES2
-#define GLFW_INCLUDE_ES2
-#endif
-#define GL_GLEXT_PROTOTYPES
-#include <GLFW/glfw3.h>
+struct GLFWwindow;
 
 class GLFWView : public mbgl::View, public mbgl::Backend {
 public:
@@ -38,15 +33,22 @@ public:
     void run();
 
     // mbgl::View implementation
-    void updateViewBinding();
     void bind() override;
     mbgl::Size getSize() const;
     mbgl::Size getFramebufferSize() const;
 
     // mbgl::Backend implementation
+    void invalidate() override;
+    void updateAssumedState() override;
+
+    // mbgl::MapObserver implementation
+    void onDidFinishLoadingStyle() override;
+
+protected:
+    // mbgl::Backend implementation
+    mbgl::gl::ProcAddress initializeExtension(const char*) override;
     void activate() override;
     void deactivate() override;
-    void invalidate() override;
 
 private:
     // Window callbacks
@@ -62,8 +64,7 @@ private:
 
     mbgl::Color makeRandomColor() const;
     mbgl::Point<double> makeRandomPoint() const;
-    static std::shared_ptr<const mbgl::SpriteImage>
-    makeSpriteImage(int width, int height, float pixelRatio);
+    static std::unique_ptr<mbgl::style::Image> makeImage(const std::string& id, int width, int height, float pixelRatio);
 
     void nextOrientation();
 
@@ -79,6 +80,8 @@ private:
     std::vector<std::string> spriteIDs;
 
 private:
+    void toggle3DExtrusions(bool visible);
+
     mbgl::Map* map = nullptr;
 
     bool fullscreen = false;
@@ -86,6 +89,7 @@ private:
     bool tracking = false;
     bool rotating = false;
     bool pitching = false;
+    bool show3DExtrusions = false;
 
     // Frame timer
     int frames = 0;
@@ -104,6 +108,7 @@ private:
 
     std::function<void()> changeStyleCallback;
     std::function<void()> pauseResumeCallback;
+    std::function<void(mbgl::Map*)> animateRouteCallback;
 
     mbgl::util::RunLoop runLoop;
     mbgl::util::Timer frameTick;

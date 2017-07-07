@@ -76,9 +76,6 @@
     <public name="mapbox_renderTextureMode" type="attr" />
 
     <!-- Exposed content descriptions -->
-    <public name="mapbox_compassContentDescription" type="string" />
-    <public name="mapbox_attributionsIconContentDescription" type="string" />
-    <public name="mapbox_myLocationViewContentDescription" type="string" />
     <public name="mapbox_logoContentDescription" type="string" />
 
     <!-- Exposed styles -->
@@ -88,6 +85,20 @@
     <public name="mapbox_style_dark" type="string" />
     <public name="mapbox_style_satellite" type="string" />
     <public name="mapbox_style_satellite_streets" type="string" />
+
+    <!-- Exposed strings -->
+    <public name="mapbox_compassContentDescription" type="string" />
+    <public name="mapbox_attributionsIconContentDescription" type="string" />
+    <public name="mapbox_myLocationViewContentDescription" type="string" />
+    <public name="mapbox_mapActionDescription" type="string" />
+    <public name="mapbox_attributionsDialogTitle" type="string" />
+    <public name="mapbox_attributionTelemetryTitle" type="string" />
+    <public name="mapbox_attributionTelemetryMessage" type="string" />
+    <public name="mapbox_attributionTelemetryPositive" type="string" />
+    <public name="mapbox_attributionTelemetryNegative" type="string" />
+    <public name="mapbox_attributionTelemetryNeutral" type="string" />
+    <public name="mapbox_telemetrySettings" type="string"/>
+    <public name="mapbox_offline_error_region_definition_invalid" type="string" />
 
     <!-- Exposed drawables -->
     <public name="mapbox_logo_icon" type="drawable" />

@@ -79,8 +79,6 @@ void MapWindow::changeStyle()
 
 void MapWindow::keyPressEvent(QKeyEvent *ev)
 {
-    static const qint64 transitionDuration = 300;
-
     switch (ev->key()) {
     case Qt::Key_S:
         changeStyle();
@@ -91,6 +89,9 @@ void MapWindow::keyPressEvent(QKeyEvent *ev)
             }
 
             m_sourceAdded = true;
+
+            // Not in all styles, but will work on streets
+            QString before = "waterway-label";
 
             QFile geojson(":source1.geojson");
             geojson.open(QIODevice::ReadOnly);
@@ -106,7 +107,7 @@ void MapWindow::keyPressEvent(QKeyEvent *ev)
             routeCase["id"] = "routeCase";
             routeCase["type"] = "line";
             routeCase["source"] = "routeSource";
-            m_map->addLayer(routeCase);
+            m_map->addLayer(routeCase, before);
 
             m_map->setPaintProperty("routeCase", "line-color", QColor("white"));
             m_map->setPaintProperty("routeCase", "line-width", 20.0);
@@ -118,7 +119,7 @@ void MapWindow::keyPressEvent(QKeyEvent *ev)
             route["id"] = "route";
             route["type"] = "line";
             route["source"] = "routeSource";
-            m_map->addLayer(route);
+            m_map->addLayer(route, before);
 
             m_map->setPaintProperty("route", "line-color", QColor("blue"));
             m_map->setPaintProperty("route", "line-width", 8.0);
@@ -201,6 +202,40 @@ void MapWindow::keyPressEvent(QKeyEvent *ev)
 
             m_map->setLayoutProperty("road-label-small", "text-pitch-alignment", "viewport");
             m_map->setLayoutProperty("road-label-small", "text-size", 30.0);
+
+            // Buildings extrusion
+            QVariantMap buildings;
+            buildings["id"] = "3d-buildings";
+            buildings["source"] = "composite";
+            buildings["source-layer"] = "building";
+            buildings["type"] = "fill-extrusion";
+            buildings["minzoom"] = 15.0;
+            m_map->addLayer(buildings);
+
+            QVariantList buildingsFilterExpression;
+            buildingsFilterExpression.append("==");
+            buildingsFilterExpression.append("extrude");
+            buildingsFilterExpression.append("true");
+
+            QVariantList buildingsFilter;
+            buildingsFilter.append(buildingsFilterExpression);
+
+            m_map->setFilter("3d-buildings", buildingsFilterExpression);
+
+            m_map->setPaintProperty("3d-buildings", "fill-extrusion-color", "#aaa");
+            m_map->setPaintProperty("3d-buildings", "fill-extrusion-opacity", .6);
+
+            QVariantMap extrusionHeight;
+            extrusionHeight["type"] = "identity";
+            extrusionHeight["property"] = "height";
+
+            m_map->setPaintProperty("3d-buildings", "fill-extrusion-height", extrusionHeight);
+
+            QVariantMap extrusionBase;
+            extrusionBase["type"] = "identity";
+            extrusionBase["property"] = "min_height";
+
+            m_map->setPaintProperty("3d-buildings", "fill-extrusion-base", extrusionBase);
         }
         break;
     case Qt::Key_1: {
@@ -243,21 +278,6 @@ void MapWindow::keyPressEvent(QKeyEvent *ev)
             }
         }
         break;
-    case Qt::Key_4: {
-            if (m_styleSourcedAnnotationId.isNull()) {
-                QMapbox::Coordinate topLeft     = m_map->coordinateForPixel({ 0, 0 });
-                QMapbox::Coordinate topRight    = m_map->coordinateForPixel({ 0, qreal(size().height()) });
-                QMapbox::Coordinate bottomLeft  = m_map->coordinateForPixel({ qreal(size().width()), 0 });
-                QMapbox::Coordinate bottomRight = m_map->coordinateForPixel({ qreal(size().width()), qreal(size().height()) });
-                QMapbox::CoordinatesCollections geometry { { { bottomLeft, bottomRight, topRight, topLeft, bottomLeft } } };
-                QMapbox::StyleSourcedAnnotation styleSourced { { QMapbox::ShapeAnnotationGeometry::PolygonType, geometry }, "water" };
-                m_styleSourcedAnnotationId = m_map->addAnnotation(QVariant::fromValue<QMapbox::StyleSourcedAnnotation>(styleSourced));
-            } else {
-                m_map->removeAnnotation(m_styleSourcedAnnotationId.toUInt());
-                m_styleSourcedAnnotationId.clear();
-            }
-        }
-        break;
     case Qt::Key_5: {
             if (m_map->layerExists("circleLayer")) {
                 m_map->removeLayer("circleLayer");
@@ -285,14 +305,6 @@ void MapWindow::keyPressEvent(QKeyEvent *ev)
     case Qt::Key_Tab:
         m_map->cycleDebugOptions();
         break;
-    case Qt::Key_R: {
-        m_map->setTransitionOptions(transitionDuration);
-        if (m_map->hasClass("night")) {
-            m_map->removeClass("night");
-        } else {
-            m_map->addClass("night");
-        }
-    } break;
     default:
         break;
     }
@@ -372,8 +384,6 @@ void MapWindow::wheelEvent(QWheelEvent *ev)
 
 void MapWindow::initializeGL()
 {
-    QMapbox::initializeGLExtensions();
-
     m_map.reset(new QMapboxGL(nullptr, m_settings, size(), pixelRatio()));
     connect(m_map.data(), SIGNAL(needsRendering()), this, SLOT(update()));
 
@@ -399,5 +409,9 @@ void MapWindow::paintGL()
 {
     m_frameDraws++;
     m_map->resize(size(), size() * pixelRatio());
+#if QT_VERSION >= 0x050400
+    // When we're using QOpenGLWidget, we need to tell Mapbox GL about the framebuffer we're using.
+    m_map->setFramebufferObject(defaultFramebufferObject());
+#endif
     m_map->render();
 }

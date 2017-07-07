@@ -27,12 +27,9 @@ android {
     lintOptions {
         checkAllWarnings true
         warningsAsErrors true
+        disable 'MissingTranslation'
         disable 'IconDensities'
         disable 'InvalidPackage'
-    }
-
-    testOptions {
-        unitTests.returnDefaultValues = true
     }
 
     buildTypes {
@@ -60,10 +57,7 @@ dependencies {
     }
 
     // Support libraries
-    compile rootProject.ext.dep.supportAnnotations
-    compile rootProject.ext.dep.supportV4
     compile rootProject.ext.dep.supportAppcompatV7
-    compile rootProject.ext.dep.supportDesign
     compile rootProject.ext.dep.supportRecyclerView
 
     // Leak Canary
@@ -77,8 +71,6 @@ dependencies {
     }
 
     // Testing dependencies
-    testCompile rootProject.ext.dep.junit
-    testCompile rootProject.ext.dep.mockito
     androidTestCompile rootProject.ext.dep.testSpoonRunner
     androidTestCompile rootProject.ext.dep.supportAnnotations
     androidTestCompile rootProject.ext.dep.testRunner

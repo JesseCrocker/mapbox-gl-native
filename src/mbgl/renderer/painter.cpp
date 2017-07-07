@@ -1,6 +1,8 @@
 #include <mbgl/renderer/painter.hpp>
 #include <mbgl/renderer/paint_parameters.hpp>
 #include <mbgl/renderer/render_tile.hpp>
+#include <mbgl/renderer/render_source.hpp>
+#include <mbgl/renderer/render_style.hpp>
 
 #include <mbgl/style/source.hpp>
 #include <mbgl/style/source_impl.hpp>
@@ -10,28 +12,26 @@
 #include <mbgl/util/logging.hpp>
 #include <mbgl/gl/debugging.hpp>
 
-#include <mbgl/style/style.hpp>
 #include <mbgl/style/layer_impl.hpp>
-
-#include <mbgl/style/layers/background_layer.hpp>
-#include <mbgl/style/layers/custom_layer.hpp>
 #include <mbgl/style/layers/custom_layer_impl.hpp>
 
-#include <mbgl/sprite/sprite_atlas.hpp>
+#include <mbgl/tile/tile.hpp>
+#include <mbgl/renderer/layers/render_background_layer.hpp>
+#include <mbgl/renderer/layers/render_custom_layer.hpp>
+#include <mbgl/style/layers/custom_layer_impl.hpp>
+#include <mbgl/renderer/layers/render_fill_extrusion_layer.hpp>
+
+#include <mbgl/renderer/image_manager.hpp>
 #include <mbgl/geometry/line_atlas.hpp>
-#include <mbgl/text/glyph_atlas.hpp>
 
 #include <mbgl/programs/program_parameters.hpp>
 #include <mbgl/programs/programs.hpp>
-
-#include <mbgl/algorithm/generate_clip_ids.hpp>
-#include <mbgl/algorithm/generate_clip_ids_impl.hpp>
 
 #include <mbgl/util/constants.hpp>
 #include <mbgl/util/mat3.hpp>
 #include <mbgl/util/string.hpp>
 
-#include <mbgl/util/offscreen_texture.hpp>
+#include <mbgl/util/stopwatch.hpp>
 
 #include <cassert>
 #include <algorithm>
@@ -51,7 +51,7 @@ static gl::VertexVector<FillLayoutVertex> tileVertices() {
     return result;
 }
 
-static gl::IndexVector<gl::Triangles> tileTriangleIndices() {
+static gl::IndexVector<gl::Triangles> quadTriangleIndices() {
     gl::IndexVector<gl::Triangles> result;
     result.emplace_back(0, 1, 2);
     result.emplace_back(1, 2, 3);
@@ -77,40 +77,52 @@ static gl::VertexVector<RasterLayoutVertex> rasterVertices() {
     return result;
 }
 
-Painter::Painter(gl::Context& context_, const TransformState& state_, float pixelRatio)
+static gl::VertexVector<ExtrusionTextureLayoutVertex> extrusionTextureVertices() {
+    gl::VertexVector<ExtrusionTextureLayoutVertex> result;
+    result.emplace_back(ExtrusionTextureProgram::layoutVertex({ 0, 0 }));
+    result.emplace_back(ExtrusionTextureProgram::layoutVertex({ 1, 0 }));
+    result.emplace_back(ExtrusionTextureProgram::layoutVertex({ 0, 1 }));
+    result.emplace_back(ExtrusionTextureProgram::layoutVertex({ 1, 1 }));
+    return result;
+}
+
+
+Painter::Painter(gl::Context& context_,
+                 const TransformState& state_,
+                 float pixelRatio,
+                 const optional<std::string>& programCacheDir)
     : context(context_),
       state(state_),
       tileVertexBuffer(context.createVertexBuffer(tileVertices())),
       rasterVertexBuffer(context.createVertexBuffer(rasterVertices())),
-      tileTriangleIndexBuffer(context.createIndexBuffer(tileTriangleIndices())),
+      extrusionTextureVertexBuffer(context.createVertexBuffer(extrusionTextureVertices())),
+      quadTriangleIndexBuffer(context.createIndexBuffer(quadTriangleIndices())),
       tileBorderIndexBuffer(context.createIndexBuffer(tileLineStripIndices())) {
 
     tileTriangleSegments.emplace_back(0, 0, 4, 6);
     tileBorderSegments.emplace_back(0, 0, 4, 5);
     rasterSegments.emplace_back(0, 0, 4, 6);
+    extrusionTextureSegments.emplace_back(0, 0, 4, 6);
 
-    gl::debugging::enable();
-
-    ProgramParameters programParameters{ pixelRatio, false };
-    programs = std::make_unique<Programs>(context, programParameters);
+    programs = std::make_unique<Programs>(context,
+                                          ProgramParameters{ pixelRatio, false, programCacheDir });
 #ifndef NDEBUG
-
-    ProgramParameters programParametersOverdraw{ pixelRatio, true };
-    overdrawPrograms = std::make_unique<Programs>(context, programParametersOverdraw);
+    overdrawPrograms =
+        std::make_unique<Programs>(context, ProgramParameters{ pixelRatio, true, programCacheDir });
 #endif
 }
 
 Painter::~Painter() = default;
 
 bool Painter::needsAnimation() const {
-    return frameHistory.needsAnimation(util::DEFAULT_FADE_DURATION);
+    return frameHistory.needsAnimation(util::DEFAULT_TRANSITION_DURATION);
 }
 
 void Painter::cleanup() {
     context.performCleanup();
 }
 
-void Painter::render(const Style& style, const FrameData& frame_, View& view, SpriteAtlas& annotationSpriteAtlas) {
+void Painter::render(RenderStyle& style, const FrameData& frame_, View& view) {
     frame = frame_;
     if (frame.contextMode == GLContextMode::Shared) {
         context.setDirtyState();
@@ -125,16 +137,21 @@ void Painter::render(const Style& style, const FrameData& frame_, View& view, Sp
         view
     };
 
-    glyphAtlas = style.glyphAtlas.get();
-    spriteAtlas = style.spriteAtlas.get();
+    imageManager = style.imageManager.get();
     lineAtlas = style.lineAtlas.get();
+
+    evaluatedLight = style.getRenderLight().getEvaluated();
 
     RenderData renderData = style.getRenderData(frame.debugOptions, state.getAngle());
     const std::vector<RenderItem>& order = renderData.order;
-    const std::unordered_set<Source*>& sources = renderData.sources;
+    const std::unordered_set<RenderSource*>& sources = renderData.sources;
 
     // Update the default matrices to the current viewport dimensions.
     state.getProjMatrix(projMatrix);
+    // Calculate a second projection matrix with the near plane clipped to 100 so as
+    // not to waste lots of depth buffer precision on very close empty space, for layer
+    // types (fill-extrusion) that use the depth buffer to emulate real-world space.
+    state.getProjMatrix(nearClippedProjMatrix, 100);
 
     pixelsToGLUnits = {{ 2.0f  / state.getSize().width, -2.0f / state.getSize().height }};
     if (state.getViewportMode() == ViewportMode::FlippedY) {
@@ -142,33 +159,24 @@ void Painter::render(const Style& style, const FrameData& frame_, View& view, Sp
     }
 
     frameHistory.record(frame.timePoint, state.getZoom(),
-        frame.mapMode == MapMode::Continuous ? util::DEFAULT_FADE_DURATION : Milliseconds(0));
+        frame.mapMode == MapMode::Continuous ? util::DEFAULT_TRANSITION_DURATION : Milliseconds(0));
 
 
     // - UPLOAD PASS -------------------------------------------------------------------------------
     // Uploads all required buffers and images before we do any actual rendering.
     {
-        MBGL_DEBUG_GROUP("upload");
+        MBGL_DEBUG_GROUP(context, "upload");
 
-        spriteAtlas->upload(context, 0);
-
+        imageManager->upload(context, 0);
         lineAtlas->upload(context, 0);
-        glyphAtlas->upload(context, 0);
         frameHistory.upload(context, 0);
-        annotationSpriteAtlas.upload(context, 0);
-
-        for (const auto& item : order) {
-            if (item.bucket && item.bucket->needsUpload()) {
-                item.bucket->upload(context);
-            }
-        }
     }
 
     // - CLEAR -------------------------------------------------------------------------------------
     // Renders the backdrop of the OpenGL view. This also paints in areas where we don't have any
     // tiles whatsoever.
     {
-        MBGL_DEBUG_GROUP("clear");
+        MBGL_DEBUG_GROUP(context, "clear");
         view.bind();
         context.clear(paintMode() == PaintMode::Overdraw
                         ? Color::black()
@@ -180,19 +188,19 @@ void Painter::render(const Style& style, const FrameData& frame_, View& view, Sp
     // - CLIPPING MASKS ----------------------------------------------------------------------------
     // Draws the clipping masks to the stencil buffer.
     {
-        MBGL_DEBUG_GROUP("clip");
+        MBGL_DEBUG_GROUP(context, "clip");
 
         // Update all clipping IDs.
-        algorithm::ClipIDGenerator generator;
+        clipIDGenerator = algorithm::ClipIDGenerator();
         for (const auto& source : sources) {
-            source->baseImpl->startRender(generator, projMatrix, state);
+            source->startRender(*this);
         }
 
-        MBGL_DEBUG_GROUP("clipping masks");
+        MBGL_DEBUG_GROUP(context, "clipping masks");
 
-        for (const auto& stencil : generator.getStencils()) {
-            MBGL_DEBUG_GROUP(std::string{ "mask: " } + util::toString(stencil.first));
-            renderClippingMask(stencil.first, stencil.second);
+        for (const auto& clipID : clipIDGenerator.getClipIDs()) {
+            MBGL_DEBUG_GROUP(context, std::string{ "mask: " } + util::toString(clipID.first));
+            renderClippingMask(clipID.first, clipID.second);
         }
     }
 
@@ -206,7 +214,6 @@ void Painter::render(const Style& style, const FrameData& frame_, View& view, Sp
     // Actually render the layers
     if (debug::renderTree) { Log::Info(Event::Render, "{"); indent++; }
 
-    // TODO: Correctly compute the number of layers recursively beforehand.
     depthRangeSize = 1 - (order.size() + 2) * numSublayers * depthEpsilon;
 
     // - OPAQUE PASS -------------------------------------------------------------------------------
@@ -228,14 +235,14 @@ void Painter::render(const Style& style, const FrameData& frame_, View& view, Sp
     // - DEBUG PASS --------------------------------------------------------------------------------
     // Renders debug overlays.
     {
-        MBGL_DEBUG_GROUP("debug");
+        MBGL_DEBUG_GROUP(context, "debug");
 
         // Finalize the rendering, e.g. by calling debug render calls per tile.
         // This guarantees that we have at least one function per tile called.
         // When only rendering layers via the stylesheet, it's possible that we don't
         // ever visit a tile during rendering.
         for (const auto& source : sources) {
-            source->baseImpl->finishRender(*this);
+            source->finishRender(*this);
         }
     }
 
@@ -248,7 +255,7 @@ void Painter::render(const Style& style, const FrameData& frame_, View& view, Sp
     // TODO: Find a better way to unbind VAOs after we're done with them without introducing
     // unnecessary bind(0)/bind(N) sequences.
     {
-        MBGL_DEBUG_GROUP("cleanup");
+        MBGL_DEBUG_GROUP(context, "cleanup");
 
         context.activeTexture = 1;
         context.texture[1] = 0;
@@ -266,7 +273,7 @@ void Painter::renderPass(PaintParameters& parameters,
                          uint32_t i, int8_t increment) {
     pass = pass_;
 
-    MBGL_DEBUG_GROUP(pass == RenderPass::Opaque ? "opaque" : "translucent");
+    MBGL_DEBUG_GROUP(context, pass == RenderPass::Opaque ? "opaque" : "translucent");
 
     if (debug::renderTree) {
         Log::Info(Event::Render, "%*s%s {", indent++ * 4, "",
@@ -277,38 +284,62 @@ void Painter::renderPass(PaintParameters& parameters,
         currentLayer = i;
 
         const auto& item = *it;
-        const Layer& layer = item.layer;
+        const RenderLayer& layer = item.layer;
 
-        if (!layer.baseImpl->hasRenderPass(pass))
+        if (!layer.hasRenderPass(pass))
             continue;
 
-        if (layer.is<BackgroundLayer>()) {
-            MBGL_DEBUG_GROUP("background");
-            renderBackground(parameters, *layer.as<BackgroundLayer>());
-        } else if (layer.is<CustomLayer>()) {
-            MBGL_DEBUG_GROUP(layer.baseImpl->id + " - custom");
+        if (layer.is<RenderBackgroundLayer>()) {
+            MBGL_DEBUG_GROUP(context, "background");
+            renderBackground(parameters, *layer.as<RenderBackgroundLayer>());
+        } else if (layer.is<RenderFillExtrusionLayer>()) {
+            const auto size = context.viewport.getCurrentValue().size;
 
-            // Reset GL state to a known state so the CustomLayer always has a clean slate.
-            context.vertexArrayObject = 0;
-            context.setDepthMode(depthModeForSublayer(0, gl::DepthMode::ReadOnly));
+            if (!extrusionTexture || extrusionTexture->getSize() != size) {
+                extrusionTexture = OffscreenTexture(context, size, OffscreenTextureAttachment::Depth);
+            }
+
+            extrusionTexture->bind();
+
             context.setStencilMode(gl::StencilMode::disabled());
-            context.setColorMode(colorModeForRenderPass());
+            context.setDepthMode(depthModeForSublayer(0, gl::DepthMode::ReadWrite));
+            context.clear(Color{ 0.0f, 0.0f, 0.0f, 0.0f }, 1.0f, {});
 
-            layer.as<CustomLayer>()->impl->render(state);
+            renderItem(parameters, item);
 
-            // Reset the view back to our original one, just in case the CustomLayer changed
-            // the viewport or Framebuffer.
             parameters.view.bind();
-            context.setDirtyState();
+            context.bindTexture(extrusionTexture->getTexture());
+
+            mat4 viewportMat;
+            matrix::ortho(viewportMat, 0, size.width, size.height, 0, 0, 1);
+
+            const Properties<>::PossiblyEvaluated properties;
+
+            parameters.programs.extrusionTexture.draw(
+                context, gl::Triangles(), gl::DepthMode::disabled(), gl::StencilMode::disabled(),
+                colorModeForRenderPass(),
+                ExtrusionTextureProgram::UniformValues{
+                    uniforms::u_matrix::Value{ viewportMat }, uniforms::u_world::Value{ size },
+                    uniforms::u_image::Value{ 0 },
+                    uniforms::u_opacity::Value{ layer.as<RenderFillExtrusionLayer>()
+                                                    ->evaluated.get<FillExtrusionOpacity>() } },
+                extrusionTextureVertexBuffer, quadTriangleIndexBuffer, extrusionTextureSegments,
+                ExtrusionTextureProgram::PaintPropertyBinders{ properties, 0 }, properties,
+                state.getZoom());
         } else {
-            MBGL_DEBUG_GROUP(layer.baseImpl->id + " - " + util::toString(item.tile->id));
-            item.bucket->render(*this, parameters, layer, *item.tile);
+            renderItem(parameters, item);
         }
     }
 
     if (debug::renderTree) {
         Log::Info(Event::Render, "%*s%s", --indent * 4, "", "}");
     }
+}
+
+void Painter::renderItem(PaintParameters& parameters, const RenderItem& item) {
+    RenderLayer& layer = item.layer;
+    MBGL_DEBUG_GROUP(context, layer.getID());
+    layer.render(*this, parameters, item.source);
 }
 
 mat4 Painter::matrixForTile(const UnwrappedTileID& tileID) {

@@ -3,6 +3,7 @@
 
 #include <jni/jni.hpp>
 
+#include <mbgl/style/style.hpp>
 #include <mbgl/util/logging.hpp>
 
 // Java -> C++ conversion
@@ -43,6 +44,11 @@ namespace android {
         return jni::Make<jni::String>(env, source.getID());
     }
 
+    jni::String Source::getAttribution(jni::JNIEnv& env) {
+        auto attribution = source.getAttribution();
+        return attribution ? jni::Make<jni::String>(env, attribution.value()) : jni::Make<jni::String>(env,"");
+    }
+
     void Source::addToMap(mbgl::Map& _map) {
         // Check to see if we own the source first
         if (!ownedSource) {
@@ -50,7 +56,7 @@ namespace android {
         }
 
         // Add source to map
-        _map.addSource(releaseCoreSource());
+        _map.getStyle().addSource(releaseCoreSource());
 
         // Save pointer to the map
         this->map = &_map;
@@ -71,7 +77,8 @@ namespace android {
 
         // Register the peer
         jni::RegisterNativePeer<Source>(env, Source::javaClass, "nativePtr",
-            METHOD(&Source::getId, "nativeGetId")
+            METHOD(&Source::getId, "nativeGetId"),
+            METHOD(&Source::getAttribution, "nativeGetAttribution")
         );
 
     }

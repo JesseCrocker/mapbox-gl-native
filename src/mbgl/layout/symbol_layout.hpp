@@ -6,6 +6,7 @@
 #include <mbgl/layout/symbol_instance.hpp>
 #include <mbgl/text/bidi.hpp>
 #include <mbgl/style/layers/symbol_layer_impl.hpp>
+#include <mbgl/programs/symbol_program.hpp>
 
 #include <memory>
 #include <map>
@@ -14,52 +15,40 @@
 
 namespace mbgl {
 
-class GeometryTileLayer;
+class BucketParameters;
 class CollisionTile;
-class SpriteAtlas;
-class GlyphAtlas;
 class SymbolBucket;
 class Anchor;
+class RenderLayer;
 
 namespace style {
-class BucketParameters;
 class Filter;
-class Layer;
 } // namespace style
 
 class SymbolLayout {
 public:
-    SymbolLayout(const style::BucketParameters&,
-                 const std::vector<const style::Layer*>&,
-                 const GeometryTileLayer&,
-                 SpriteAtlas&);
+    SymbolLayout(const BucketParameters&,
+                 const std::vector<const RenderLayer*>&,
+                 std::unique_ptr<GeometryTileLayer>,
+                 ImageDependencies&,
+                 GlyphDependencies&);
 
-    bool canPrepare(GlyphAtlas&);
-
-    void prepare(uintptr_t tileUID,
-                 GlyphAtlas&);
+    void prepare(const GlyphMap&, const GlyphPositions&,
+                 const ImageMap&, const ImagePositions&);
 
     std::unique_ptr<SymbolBucket> place(CollisionTile&);
 
     bool hasSymbolInstances() const;
 
-    enum State {
-        Pending,  // Waiting for the necessary glyphs or icons to be available.
-        Prepared, // The potential positions of text and icons have been determined.
-        Placed    // The final positions have been determined, taking into account prior layers.
-    };
-
-    State state = Pending;
-
-    std::unordered_map<std::string,
-        std::pair<style::IconPaintProperties::Evaluated, style::TextPaintProperties::Evaluated>> layerPaintProperties;
+    std::map<std::string,
+        std::pair<style::IconPaintProperties::PossiblyEvaluated, style::TextPaintProperties::PossiblyEvaluated>> layerPaintProperties;
 
 private:
     void addFeature(const size_t,
                     const SymbolFeature&,
                     const std::pair<Shaping, Shaping>& shapedTextOrientations,
-                    const PositionedIcon& shapedIcon,
-                    const GlyphPositions& face);
+                    optional<PositionedIcon> shapedIcon,
+                    const GlyphPositionMap&);
 
     bool anchorIsTooClose(const std::u16string& text, const float repeatDistance, const Anchor&);
     std::map<std::u16string, std::vector<Anchor>> compareText;
@@ -68,28 +57,36 @@ private:
 
     // Adds placed items to the buffer.
     template <typename Buffer>
-    void addSymbol(Buffer&, const SymbolQuad&, float scale,
-                    const bool keepUpright, const style::SymbolPlacementType, const float placementAngle,
-                    WritingModeType writingModes);
+    void addSymbol(Buffer&,
+                   SymbolSizeBinder& sizeBinder,
+                   const SymbolQuad&,
+                   const SymbolFeature& feature,
+                   float scale,
+                   const bool keepUpright,
+                   const style::SymbolPlacementType,
+                   const float placementAngle,
+                   WritingModeType writingModes);
 
-    const std::string sourceLayerName;
+    // Stores the layer so that we can hold on to GeometryTileFeature instances in SymbolFeature,
+    // which may reference data from this object.
+    const std::unique_ptr<GeometryTileLayer> sourceLayer;
     const std::string bucketName;
     const float overscaling;
     const float zoom;
     const MapMode mode;
+    const float pixelRatio;
 
-    style::SymbolLayoutProperties::Evaluated layout;
-    float textMaxSize;
-
-    SpriteAtlas& spriteAtlas;
+    style::SymbolLayoutProperties::PossiblyEvaluated layout;
 
     const uint32_t tileSize;
     const float tilePixelRatio;
 
     bool sdfIcons = false;
     bool iconsNeedLinear = false;
+    
+    style::TextSize::UnevaluatedType textSize;
+    style::IconSize::UnevaluatedType iconSize;
 
-    GlyphRangeSet ranges;
     std::vector<SymbolInstance> symbolInstances;
     std::vector<SymbolFeature> features;
 

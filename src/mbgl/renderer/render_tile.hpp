@@ -11,8 +11,9 @@ namespace mbgl {
 
 class Tile;
 class TransformState;
+class Painter;
 
-class RenderTile {
+class RenderTile final {
 public:
     RenderTile(UnwrappedTileID id_, Tile& tile_) : id(std::move(id_)), tile(tile_) {}
     RenderTile(const RenderTile&) = delete;
@@ -24,11 +25,24 @@ public:
     Tile& tile;
     ClipID clip;
     mat4 matrix;
+    mat4 nearClippedMatrix;
     bool used = false;
 
     mat4 translatedMatrix(const std::array<float, 2>& translate,
                           style::TranslateAnchorType anchor,
                           const TransformState&) const;
+
+    mat4 translatedClipMatrix(const std::array<float, 2>& translate,
+                              style::TranslateAnchorType anchor,
+                              const TransformState&) const;
+
+    void startRender(Painter&);
+
+private:
+    mat4 translateVtxMatrix(const mat4& tileMatrix,
+                            const std::array<float, 2>& translation,
+                            style::TranslateAnchorType anchor,
+                            const TransformState& state) const;
 };
 
 } // namespace mbgl

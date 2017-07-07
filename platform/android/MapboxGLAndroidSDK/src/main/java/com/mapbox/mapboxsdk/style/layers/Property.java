@@ -446,6 +446,69 @@ public final class Property {
   @Retention(RetentionPolicy.SOURCE)
   public @interface CIRCLE_PITCH_SCALE {}
 
+  // CIRCLE_PITCH_ALIGNMENT: Orientation of circle when map is pitched.
+
+  /**
+   * The circle is aligned to the plane of the map.
+   */
+  public static final String CIRCLE_PITCH_ALIGNMENT_MAP = "map";
+  /**
+   * The circle is aligned to the plane of the viewport.
+   */
+  public static final String CIRCLE_PITCH_ALIGNMENT_VIEWPORT = "viewport";
+
+  /**
+   * Orientation of circle when map is pitched.
+   */
+  @StringDef({
+      CIRCLE_PITCH_ALIGNMENT_MAP,
+      CIRCLE_PITCH_ALIGNMENT_VIEWPORT,
+    })
+  @Retention(RetentionPolicy.SOURCE)
+  public @interface CIRCLE_PITCH_ALIGNMENT {}
+
+  // FILL_EXTRUSION_TRANSLATE_ANCHOR: Controls the translation reference point.
+
+  /**
+   * The fill extrusion is translated relative to the map.
+   */
+  public static final String FILL_EXTRUSION_TRANSLATE_ANCHOR_MAP = "map";
+  /**
+   * The fill extrusion is translated relative to the viewport.
+   */
+  public static final String FILL_EXTRUSION_TRANSLATE_ANCHOR_VIEWPORT = "viewport";
+
+  /**
+   * Controls the translation reference point.
+   */
+  @StringDef({
+      FILL_EXTRUSION_TRANSLATE_ANCHOR_MAP,
+      FILL_EXTRUSION_TRANSLATE_ANCHOR_VIEWPORT,
+    })
+  @Retention(RetentionPolicy.SOURCE)
+  public @interface FILL_EXTRUSION_TRANSLATE_ANCHOR {}
+
+  // ANCHOR: Whether extruded geometries are lit relative to the map or viewport.
+
+  /**
+   * The position of the light source is aligned to the rotation of the map.
+   */
+  public static final String ANCHOR_MAP = "map";
+  /**
+   * The position of the light source is aligned to the rotation of the viewport.
+   */
+  public static final String ANCHOR_VIEWPORT = "viewport";
+
+  /**
+   * Whether extruded geometries are lit relative to the map or viewport.
+   */
+  @StringDef({
+      ANCHOR_MAP,
+      ANCHOR_VIEWPORT,
+    })
+  @Retention(RetentionPolicy.SOURCE)
+  public @interface ANCHOR {}
+
 
   private Property() {
   }

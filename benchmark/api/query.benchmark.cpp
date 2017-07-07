@@ -2,10 +2,12 @@
 
 #include <mbgl/benchmark/util.hpp>
 #include <mbgl/map/map.hpp>
+#include <mbgl/map/backend_scope.hpp>
 #include <mbgl/gl/headless_backend.hpp>
 #include <mbgl/gl/offscreen_view.hpp>
 #include <mbgl/util/default_thread_pool.hpp>
-#include <mbgl/sprite/sprite_image.hpp>
+#include <mbgl/style/style.hpp>
+#include <mbgl/style/image.hpp>
 #include <mbgl/storage/default_file_source.hpp>
 #include <mbgl/storage/network_status.hpp>
 #include <mbgl/util/image.hpp>
@@ -22,18 +24,17 @@ public:
         NetworkStatus::Set(NetworkStatus::Status::Offline);
         fileSource.setAccessToken("foobar");
 
-        map.setStyleJSON(util::read_file("benchmark/fixtures/api/query_style.json"));
+        map.getStyle().loadJSON(util::read_file("benchmark/fixtures/api/style.json"));
         map.setLatLngZoom({ 40.726989, -73.992857 }, 15); // Manhattan
-
-        auto decoded = decodeImage(util::read_file("benchmark/fixtures/api/default_marker.png"));
-        auto image = std::make_unique<SpriteImage>(std::move(decoded), 1.0);
-        map.addImage("test-icon", std::move(image));
+        map.getStyle().addImage(std::make_unique<style::Image>("test-icon",
+            decodeImage(util::read_file("benchmark/fixtures/api/default_marker.png")), 1.0));
 
         mbgl::benchmark::render(map, view);
     }
 
     util::RunLoop loop;
     HeadlessBackend backend;
+    BackendScope scope { backend };
     OffscreenView view{ backend.getContext(), { 1000, 1000 } };
     DefaultFileSource fileSource{ "benchmark/fixtures/api/cache.db", "." };
     ThreadPool threadPool{ 4 };

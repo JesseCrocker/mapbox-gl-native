@@ -1,12 +1,17 @@
 #pragma once
 
+#include <mbgl/style/source.hpp>
+
 #include <cstdint>
 #include <exception>
+#include <string>
 
 namespace mbgl {
 
 class MapObserver {
 public:
+    virtual ~MapObserver() = default;
+
     static MapObserver& nullObserver() {
         static MapObserver mapObserver;
         return mapObserver;
@@ -33,7 +38,7 @@ public:
     virtual void onWillStartRenderingMap() {}
     virtual void onDidFinishRenderingMap(RenderMode) {}
     virtual void onDidFinishLoadingStyle() {}
-    virtual void onSourceDidChange() {}
+    virtual void onSourceChanged(style::Source&) {}
 };
 
 } // namespace mbgl

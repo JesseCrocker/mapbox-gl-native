@@ -19,9 +19,11 @@ custom_categories:
     children:
       - Adding Points to a Map
       - Runtime Styling
+      - Using Style Functions at Runtime
       - Working with Mapbox Studio
       - Working with GeoJSON Data
       - For Style Authors
+      - Tile URL Templates
       - Info.plist Keys
       - Gesture Recognizers
   - name: Maps
@@ -58,6 +60,7 @@ custom_categories:
     children:
       - MGLStyle
       - MGLStyleValue
+      - MGLLight
   - name: Style Primitives
     children:
       - MGLFeature
@@ -72,7 +75,7 @@ custom_categories:
     children:
       - MGLSource
       - MGLTileSource
-      - MGLAbstractShapeSource
+      - MGLImageSource
       - MGLShapeSource
       - MGLComputedShapeSource
       - MGLRasterSource
@@ -86,6 +89,7 @@ custom_categories:
       - MGLVectorStyleLayer
       - MGLCircleStyleLayer
       - MGLFillStyleLayer
+      - MGLFillExtrusionStyleLayer
       - MGLLineStyleLayer
       - MGLSymbolStyleLayer
   - name: Offline Maps
@@ -106,6 +110,9 @@ custom_categories:
       - MGLCoordinateBoundsMake
       - MGLCoordinateBoundsOffset
       - MGLCoordinateInCoordinateBounds
+      - MGLCoordinateQuad
+      - MGLCoordinateQuadMake
+      - MGLCoordinateQuadFromCoordinateBounds
       - MGLCoordinateSpan
       - MGLCoordinateSpanEqualToCoordinateSpan
       - MGLCoordinateSpanMake
@@ -113,6 +120,7 @@ custom_categories:
       - MGLDegreesFromRadians
       - MGLRadiansFromDegrees
       - MGLStringFromCoordinateBounds
+      - MGLStringFromCoordinateQuad
   - name: Formatters
     children:
       - MGLClockDirectionFormatter

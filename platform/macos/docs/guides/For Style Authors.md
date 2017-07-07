@@ -1,6 +1,6 @@
 <!--
   This file is generated.
-  Edit platform/darwin/scripts/generate-style-code.js, then run `make style-code-darwin`.
+  Edit platform/darwin/scripts/generate-style-code.js, then run `make darwin-style-code`.
 -->
 # Information for Style Authors
 
@@ -96,8 +96,8 @@ the following terms for concepts defined in the style specification:
 
 In the style specification | In the SDK
 ---------------------------|---------
-class                      | style class
 filter                     | predicate
+function type              | interpolation mode
 id                         | identifier
 image                      | style image
 layer                      | style layer
@@ -116,8 +116,9 @@ In style JSON | In the SDK
 `geojson`     | `MGLShapeSource`
 `raster`      | `MGLRasterSource`
 `vector`      | `MGLVectorSource`
+`image`       | `MGLImageSource`
 
-`canvas`, `image`, and `video` sources are not supported.
+`canvas` and `video` sources are not supported.
 
 ### Tile sources
 
@@ -158,6 +159,12 @@ To create a shape source from local GeoJSON data, first
 [convert the GeoJSON data into a shape](working-with-geojson-data.html#converting-geojson-data-into-shape-objects),
 then use the `-[MGLShapeSource initWithIdentifier:shape:options:]` method.
 
+### Image sources
+
+Image sources accept a non-axis aligned quadrilateral as their geographic coordinates.
+These coordinates, in `MGLCoordinateQuad`, are described in counterclockwise order, 
+in contrast to the clockwise order defined in the style specification. 
+
 ## Configuring the map content’s appearance
 
 Each layer defined by the style JSON file is represented at runtime by a style
@@ -169,6 +176,7 @@ In style JSON | In the SDK
 `background` | `MGLBackgroundStyleLayer`
 `circle` | `MGLCircleStyleLayer`
 `fill` | `MGLFillStyleLayer`
+`fill-extrusion` | `MGLFillExtrusionStyleLayer`
 `line` | `MGLLineStyleLayer`
 `raster` | `MGLRasterStyleLayer`
 `symbol` | `MGLSymbolStyleLayer`
@@ -193,6 +201,13 @@ In style JSON | In Objective-C | In Swift
 `fill-antialias` | `MGLFillStyleLayer.fillAntialiased` | `MGLFillStyleLayer.isFillAntialiased`
 `fill-translate` | `MGLFillStyleLayer.fillTranslation` | `MGLFillStyleLayer.fillTranslation`
 `fill-translate-anchor` | `MGLFillStyleLayer.fillTranslationAnchor` | `MGLFillStyleLayer.fillTranslationAnchor`
+
+### Fill extrusion style layers
+
+In style JSON | In Objective-C | In Swift
+--------------|----------------|---------
+`fill-extrusion-translate` | `MGLFillExtrusionStyleLayer.fillExtrusionTranslation` | `MGLFillExtrusionStyleLayer.fillExtrusionTranslation`
+`fill-extrusion-translate-anchor` | `MGLFillExtrusionStyleLayer.fillExtrusionTranslationAnchor` | `MGLFillExtrusionStyleLayer.fillExtrusionTranslationAnchor`
 
 ### Line style layers
 
@@ -241,10 +256,12 @@ In style JSON | In Objective-C | In Swift
 ## Setting attribute values
 
 Each property representing a layout or paint attribute is set to an
-`MGLStyleValue` object, which is either an `MGLStyleConstantValue` object (for
-constant values) or an `MGLStyleFunction` object (for zoom level functions). The
+`MGLStyleValue` object, which is either an `MGLConstantStyleValue` object (for
+constant values) or an `MGLStyleFunction` object (for style functions). The
 style value object is a container for the raw value or function parameters that
 you want the attribute to be set to.
+
+### Constant style values
 
 In contrast to the JSON type that the style specification defines for each
 layout or paint property, the style value object often contains a more specific
@@ -275,6 +292,39 @@ lower-left corner of the screen. Therefore, a positive `CGVector.dy` means an
 offset or translation upward, while a negative `CGVector.dy` means an offset or
 translation downward. This is the reverse of how `CGVector` is interpreted on
 iOS.
+
+### Style functions
+
+A _style function_ allows you to vary the value of a layout or paint attribute
+based on the zoom level, data provided by content sources, or both. For more
+information about style functions, see “[Using Style Functions at Runtime](using-style-functions-at-runtime.html)”.
+
+Each kind of style function is represented by a distinct class, but you
+typically create style functions as you create any other style value, using
+class methods on `MGLStyleValue`:
+
+In style specification     | SDK class                   | SDK factory method
+---------------------------|-----------------------------|-------------------
+zoom function              | `MGLCameraStyleFunction`    | `+[MGLStyleValue valueWithInterpolationMode:cameraStops:options:]`
+property function          | `MGLSourceStyleFunction`    | `+[MGLStyleValue valueWithInterpolationMode:sourceStops:attributeName:options:]`
+zoom-and-property function | `MGLCompositeStyleFunction` | `+[MGLStyleValue valueWithInterpolationMode:compositeStops:attributeName:options:]`
+
+The documentation for each individual style layer property indicates the kinds
+of style functions that are enabled for that property.
+
+When you create a style function, you specify an _interpolation mode_ and a
+series of _stops_. Each stop determines the effective value displayed at a
+particular zoom level (for camera functions) or the effective value on features
+with a particular attribute value in the content source (for source functions).
+The interpolation mode tells the SDK how to calculate the effective value
+between any two stops:
+
+In style specification       | In the SDK
+-----------------------------|-----------
+`exponential`                | `MGLInterpolationModeExponential`
+`interval`                   | `MGLInterpolationModeInterval`
+`categorical`                | `MGLInterpolationModeCategorical`
+`identity`                   | `MGLInterpolationModeIdentity`
 
 ## Filtering sources
 

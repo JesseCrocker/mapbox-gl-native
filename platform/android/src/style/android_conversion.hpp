@@ -2,6 +2,7 @@
 
 #include "value.hpp"
 
+#include <mbgl/util/feature.hpp>
 #include <mbgl/util/logging.hpp>
 #include <mbgl/style/conversion.hpp>
 #include <mbgl/util/optional.hpp>
@@ -59,7 +60,16 @@ inline optional<bool> toBool(const mbgl::android::Value& value) {
 
 inline optional<float> toNumber(const mbgl::android::Value& value) {
     if (value.isNumber()) {
-        return value.toNumber();
+        auto num = value.toFloat();
+        return num;
+    } else {
+        return {};
+    }
+}
+
+inline optional<double> toDouble(const mbgl::android::Value& value) {
+    if (value.isNumber()) {
+        return value.toDouble();
     } else {
         return {};
     }
@@ -81,8 +91,8 @@ inline optional<Value> toValue(const mbgl::android::Value& value) {
     } else if (value.isString()) {
         return { value.toString() };
     } else if (value.isNumber()) {
-        // Need to cast to a double here as the float is otherwise considered a bool...
-       return { (double) value.toNumber() };
+        auto doubleVal = value.toDouble();
+        return { doubleVal - (int) doubleVal > 0.0 ? doubleVal : value.toLong() };
     } else {
         return {};
     }

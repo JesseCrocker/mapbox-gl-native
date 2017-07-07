@@ -2,10 +2,12 @@
 // Edit platform/darwin/scripts/generate-style-code.js, then run `make darwin-style-code`.
 
 #import "MGLStyleLayerTests.h"
+#import "../../darwin/src/NSDate+MGLAdditions.h"
 
 #import "MGLStyleLayer_Private.h"
 
 #include <mbgl/style/layers/circle_layer.hpp>
+#include <mbgl/style/transition_options.hpp>
 
 @interface MGLCircleLayerTests : MGLStyleLayerTests
 @end
@@ -42,6 +44,9 @@
     XCTAssertNotEqual(layer.rawLayer, nullptr);
     XCTAssertTrue(layer.rawLayer->is<mbgl::style::CircleLayer>());
     auto rawLayer = layer.rawLayer->as<mbgl::style::CircleLayer>();
+
+    MGLTransition transitionTest = MGLTransitionMake(5, 4);
+
 
     // circle-blur
     {
@@ -98,6 +103,15 @@
                       @"Unsetting circleBlur should return circle-blur to the default value.");
         XCTAssertEqualObjects(layer.circleBlur, defaultStyleValue,
                               @"circleBlur should return the default value after being unset.");
+        // Transition property test
+        layer.circleBlurTransition = transitionTest;
+        auto toptions = rawLayer->getCircleBlurTransition();
+        XCTAssert(toptions.delay && MGLTimeIntervalFromDuration(*toptions.delay) == transitionTest.delay);
+        XCTAssert(toptions.duration && MGLTimeIntervalFromDuration(*toptions.duration) == transitionTest.duration);
+
+        MGLTransition circleBlurTransition = layer.circleBlurTransition;
+        XCTAssertEqual(circleBlurTransition.delay, transitionTest.delay);
+        XCTAssertEqual(circleBlurTransition.duration, transitionTest.duration);
     }
 
     // circle-color
@@ -155,6 +169,15 @@
                       @"Unsetting circleColor should return circle-color to the default value.");
         XCTAssertEqualObjects(layer.circleColor, defaultStyleValue,
                               @"circleColor should return the default value after being unset.");
+        // Transition property test
+        layer.circleColorTransition = transitionTest;
+        auto toptions = rawLayer->getCircleColorTransition();
+        XCTAssert(toptions.delay && MGLTimeIntervalFromDuration(*toptions.delay) == transitionTest.delay);
+        XCTAssert(toptions.duration && MGLTimeIntervalFromDuration(*toptions.duration) == transitionTest.duration);
+
+        MGLTransition circleColorTransition = layer.circleColorTransition;
+        XCTAssertEqual(circleColorTransition.delay, transitionTest.delay);
+        XCTAssertEqual(circleColorTransition.duration, transitionTest.duration);
     }
 
     // circle-opacity
@@ -212,6 +235,54 @@
                       @"Unsetting circleOpacity should return circle-opacity to the default value.");
         XCTAssertEqualObjects(layer.circleOpacity, defaultStyleValue,
                               @"circleOpacity should return the default value after being unset.");
+        // Transition property test
+        layer.circleOpacityTransition = transitionTest;
+        auto toptions = rawLayer->getCircleOpacityTransition();
+        XCTAssert(toptions.delay && MGLTimeIntervalFromDuration(*toptions.delay) == transitionTest.delay);
+        XCTAssert(toptions.duration && MGLTimeIntervalFromDuration(*toptions.duration) == transitionTest.duration);
+
+        MGLTransition circleOpacityTransition = layer.circleOpacityTransition;
+        XCTAssertEqual(circleOpacityTransition.delay, transitionTest.delay);
+        XCTAssertEqual(circleOpacityTransition.duration, transitionTest.duration);
+    }
+
+    // circle-pitch-alignment
+    {
+        XCTAssertTrue(rawLayer->getCirclePitchAlignment().isUndefined(),
+                      @"circle-pitch-alignment should be unset initially.");
+        MGLStyleValue<NSValue *> *defaultStyleValue = layer.circlePitchAlignment;
+
+        MGLStyleValue<NSValue *> *constantStyleValue = [MGLStyleValue<NSValue *> valueWithRawValue:[NSValue valueWithMGLCirclePitchAlignment:MGLCirclePitchAlignmentViewport]];
+        layer.circlePitchAlignment = constantStyleValue;
+        mbgl::style::PropertyValue<mbgl::style::AlignmentType> propertyValue = { mbgl::style::AlignmentType::Viewport };
+        XCTAssertEqual(rawLayer->getCirclePitchAlignment(), propertyValue,
+                       @"Setting circlePitchAlignment to a constant value should update circle-pitch-alignment.");
+        XCTAssertEqualObjects(layer.circlePitchAlignment, constantStyleValue,
+                              @"circlePitchAlignment should round-trip constant values.");
+
+        MGLStyleValue<NSValue *> * functionStyleValue = [MGLStyleValue<NSValue *> valueWithInterpolationMode:MGLInterpolationModeInterval cameraStops:@{@18: constantStyleValue} options:nil];
+        layer.circlePitchAlignment = functionStyleValue;
+
+        mbgl::style::IntervalStops<mbgl::style::AlignmentType> intervalStops = { {{18, mbgl::style::AlignmentType::Viewport}} };
+        propertyValue = mbgl::style::CameraFunction<mbgl::style::AlignmentType> { intervalStops };
+        
+        XCTAssertEqual(rawLayer->getCirclePitchAlignment(), propertyValue,
+                       @"Setting circlePitchAlignment to a camera function should update circle-pitch-alignment.");
+        XCTAssertEqualObjects(layer.circlePitchAlignment, functionStyleValue,
+                              @"circlePitchAlignment should round-trip camera functions.");
+
+                              
+
+        layer.circlePitchAlignment = nil;
+        XCTAssertTrue(rawLayer->getCirclePitchAlignment().isUndefined(),
+                      @"Unsetting circlePitchAlignment should return circle-pitch-alignment to the default value.");
+        XCTAssertEqualObjects(layer.circlePitchAlignment, defaultStyleValue,
+                              @"circlePitchAlignment should return the default value after being unset.");
+
+        functionStyleValue = [MGLStyleValue<NSValue *> valueWithInterpolationMode:MGLInterpolationModeIdentity sourceStops:nil attributeName:@"" options:nil];
+        XCTAssertThrowsSpecificNamed(layer.circlePitchAlignment = functionStyleValue, NSException, NSInvalidArgumentException, @"MGLStyleValue should raise an exception if it is applied to a property that cannot support it");
+        functionStyleValue = [MGLStyleValue<NSValue *> valueWithInterpolationMode:MGLInterpolationModeInterval compositeStops:@{@18: constantStyleValue} attributeName:@"" options:nil];
+        XCTAssertThrowsSpecificNamed(layer.circlePitchAlignment = functionStyleValue, NSException, NSInvalidArgumentException, @"MGLStyleValue should raise an exception if it is applied to a property that cannot support it");
     }
 
     // circle-radius
@@ -269,6 +340,15 @@
                       @"Unsetting circleRadius should return circle-radius to the default value.");
         XCTAssertEqualObjects(layer.circleRadius, defaultStyleValue,
                               @"circleRadius should return the default value after being unset.");
+        // Transition property test
+        layer.circleRadiusTransition = transitionTest;
+        auto toptions = rawLayer->getCircleRadiusTransition();
+        XCTAssert(toptions.delay && MGLTimeIntervalFromDuration(*toptions.delay) == transitionTest.delay);
+        XCTAssert(toptions.duration && MGLTimeIntervalFromDuration(*toptions.duration) == transitionTest.duration);
+
+        MGLTransition circleRadiusTransition = layer.circleRadiusTransition;
+        XCTAssertEqual(circleRadiusTransition.delay, transitionTest.delay);
+        XCTAssertEqual(circleRadiusTransition.duration, transitionTest.duration);
     }
 
     // circle-pitch-scale
@@ -365,6 +445,15 @@
                       @"Unsetting circleStrokeColor should return circle-stroke-color to the default value.");
         XCTAssertEqualObjects(layer.circleStrokeColor, defaultStyleValue,
                               @"circleStrokeColor should return the default value after being unset.");
+        // Transition property test
+        layer.circleStrokeColorTransition = transitionTest;
+        auto toptions = rawLayer->getCircleStrokeColorTransition();
+        XCTAssert(toptions.delay && MGLTimeIntervalFromDuration(*toptions.delay) == transitionTest.delay);
+        XCTAssert(toptions.duration && MGLTimeIntervalFromDuration(*toptions.duration) == transitionTest.duration);
+
+        MGLTransition circleStrokeColorTransition = layer.circleStrokeColorTransition;
+        XCTAssertEqual(circleStrokeColorTransition.delay, transitionTest.delay);
+        XCTAssertEqual(circleStrokeColorTransition.duration, transitionTest.duration);
     }
 
     // circle-stroke-opacity
@@ -422,6 +511,15 @@
                       @"Unsetting circleStrokeOpacity should return circle-stroke-opacity to the default value.");
         XCTAssertEqualObjects(layer.circleStrokeOpacity, defaultStyleValue,
                               @"circleStrokeOpacity should return the default value after being unset.");
+        // Transition property test
+        layer.circleStrokeOpacityTransition = transitionTest;
+        auto toptions = rawLayer->getCircleStrokeOpacityTransition();
+        XCTAssert(toptions.delay && MGLTimeIntervalFromDuration(*toptions.delay) == transitionTest.delay);
+        XCTAssert(toptions.duration && MGLTimeIntervalFromDuration(*toptions.duration) == transitionTest.duration);
+
+        MGLTransition circleStrokeOpacityTransition = layer.circleStrokeOpacityTransition;
+        XCTAssertEqual(circleStrokeOpacityTransition.delay, transitionTest.delay);
+        XCTAssertEqual(circleStrokeOpacityTransition.duration, transitionTest.duration);
     }
 
     // circle-stroke-width
@@ -479,6 +577,15 @@
                       @"Unsetting circleStrokeWidth should return circle-stroke-width to the default value.");
         XCTAssertEqualObjects(layer.circleStrokeWidth, defaultStyleValue,
                               @"circleStrokeWidth should return the default value after being unset.");
+        // Transition property test
+        layer.circleStrokeWidthTransition = transitionTest;
+        auto toptions = rawLayer->getCircleStrokeWidthTransition();
+        XCTAssert(toptions.delay && MGLTimeIntervalFromDuration(*toptions.delay) == transitionTest.delay);
+        XCTAssert(toptions.duration && MGLTimeIntervalFromDuration(*toptions.duration) == transitionTest.duration);
+
+        MGLTransition circleStrokeWidthTransition = layer.circleStrokeWidthTransition;
+        XCTAssertEqual(circleStrokeWidthTransition.delay, transitionTest.delay);
+        XCTAssertEqual(circleStrokeWidthTransition.duration, transitionTest.duration);
     }
 
     // circle-translate
@@ -570,6 +677,7 @@
     [self testPropertyName:@"circle-blur" isBoolean:NO];
     [self testPropertyName:@"circle-color" isBoolean:NO];
     [self testPropertyName:@"circle-opacity" isBoolean:NO];
+    [self testPropertyName:@"circle-pitch-alignment" isBoolean:NO];
     [self testPropertyName:@"circle-radius" isBoolean:NO];
     [self testPropertyName:@"circle-scale-alignment" isBoolean:NO];
     [self testPropertyName:@"circle-stroke-color" isBoolean:NO];
@@ -580,6 +688,8 @@
 }
 
 - (void)testValueAdditions {
+    XCTAssertEqual([NSValue valueWithMGLCirclePitchAlignment:MGLCirclePitchAlignmentMap].MGLCirclePitchAlignmentValue, MGLCirclePitchAlignmentMap);
+    XCTAssertEqual([NSValue valueWithMGLCirclePitchAlignment:MGLCirclePitchAlignmentViewport].MGLCirclePitchAlignmentValue, MGLCirclePitchAlignmentViewport);
     XCTAssertEqual([NSValue valueWithMGLCircleScaleAlignment:MGLCircleScaleAlignmentMap].MGLCircleScaleAlignmentValue, MGLCircleScaleAlignmentMap);
     XCTAssertEqual([NSValue valueWithMGLCircleScaleAlignment:MGLCircleScaleAlignmentViewport].MGLCircleScaleAlignmentValue, MGLCircleScaleAlignmentViewport);
     XCTAssertEqual([NSValue valueWithMGLCircleTranslationAnchor:MGLCircleTranslationAnchorMap].MGLCircleTranslationAnchorValue, MGLCircleTranslationAnchorMap);

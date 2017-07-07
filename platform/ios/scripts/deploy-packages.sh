@@ -83,7 +83,7 @@ if [[ $( echo ${VERSION_TAG} | grep --invert-match ios-v ) ]]; then
     exit 1
 fi
 
-if [[ $( wget --spider -O- https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/releases/tags/${VERSION_TAG} 2>&1 | grep -c "404 Not Found" ) == 0 ]]; then
+if [[ $( curl --head https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/releases/tags/${VERSION_TAG} | head -n 1 | grep -c "404 Not Found") == 0 ]]; then
     echo "Error: ${VERSION_TAG} has already been published on GitHub"
     echo "See: https://github.com/${GITHUB_USER}/${GITHUB_REPO}/releases/tag/${VERSION_TAG}"
     exit 1
@@ -112,6 +112,5 @@ buildPackageStyle "ipackage" "symbols"
 buildPackageStyle "ipackage-strip"
 buildPackageStyle "iframework" "symbols-dynamic"
 buildPackageStyle "iframework SYMBOLS=NO" "dynamic"
-buildPackageStyle "ifabric" "fabric"
 
 step "Finished deploying ${PUBLISH_VERSION} in $(($SECONDS / 60)) minutes and $(($SECONDS % 60)) seconds"

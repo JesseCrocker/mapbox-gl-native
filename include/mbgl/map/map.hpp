@@ -9,7 +9,6 @@
 #include <mbgl/util/noncopyable.hpp>
 #include <mbgl/util/size.hpp>
 #include <mbgl/annotation/annotation.hpp>
-#include <mbgl/style/transition_options.hpp>
 #include <mbgl/map/camera.hpp>
 #include <mbgl/map/query.hpp>
 
@@ -25,11 +24,10 @@ class Backend;
 class View;
 class FileSource;
 class Scheduler;
-class SpriteImage;
 
 namespace style {
-class Source;
-class Layer;
+class Image;
+class Style;
 } // namespace style
 
 class Map : private util::noncopyable {
@@ -42,7 +40,8 @@ public:
                  MapMode mapMode = MapMode::Continuous,
                  GLContextMode contextMode = GLContextMode::Unique,
                  ConstrainMode constrainMode = ConstrainMode::HeightOnly,
-                 ViewportMode viewportMode = ViewportMode::Default);
+                 ViewportMode viewportMode = ViewportMode::Default,
+                 const optional<std::string>& programCacheDir = {});
     ~Map();
 
     // Register a callback that will get called (on the render thread) when all resources have
@@ -56,21 +55,10 @@ public:
     // Main render function.
     void render(View&);
 
-    // Styling
-    void addClass(const std::string&);
-    void removeClass(const std::string&);
-    void setClasses(const std::vector<std::string>&);
+          style::Style& getStyle();
+    const style::Style& getStyle() const;
 
-    style::TransitionOptions getTransitionOptions() const;
-    void setTransitionOptions(const style::TransitionOptions&);
-
-    bool hasClass(const std::string&) const;
-    std::vector<std::string> getClasses() const;
-
-    void setStyleURL(const std::string&);
-    void setStyleJSON(const std::string&);
-    std::string getStyleURL() const;
-    std::string getStyleJSON() const;
+    void setStyle(std::unique_ptr<style::Style>);
 
     // Transition
     void cancelTransitions();
@@ -81,7 +69,7 @@ public:
     bool isPanning() const;
 
     // Camera
-    CameraOptions getCameraOptions(optional<EdgeInsets>) const;
+    CameraOptions getCameraOptions(const EdgeInsets&) const;
     void jumpTo(const CameraOptions&);
     void easeTo(const CameraOptions&, const AnimationOptions&);
     void flyTo(const CameraOptions&, const AnimationOptions&);
@@ -89,37 +77,43 @@ public:
     // Position
     void moveBy(const ScreenCoordinate&, const AnimationOptions& = {});
     void setLatLng(const LatLng&, optional<ScreenCoordinate>, const AnimationOptions& = {});
-    void setLatLng(const LatLng&, optional<EdgeInsets>, const AnimationOptions& = {});
+    void setLatLng(const LatLng&, const EdgeInsets&, const AnimationOptions& = {});
     void setLatLng(const LatLng&, const AnimationOptions& = {});
-    LatLng getLatLng(optional<EdgeInsets> = {}) const;
-    void resetPosition(optional<EdgeInsets> = {});
+    LatLng getLatLng(const EdgeInsets& = {}) const;
+    void resetPosition(const EdgeInsets& = {});
 
-    // Scale
-    void scaleBy(double ds, optional<ScreenCoordinate> = {}, const AnimationOptions& = {});
-    void setScale(double scale, optional<ScreenCoordinate> = {}, const AnimationOptions& = {});
-    double getScale() const;
+    // Zoom
     void setZoom(double zoom, const AnimationOptions& = {});
     void setZoom(double zoom, optional<ScreenCoordinate>, const AnimationOptions& = {});
-    void setZoom(double zoom, optional<EdgeInsets>, const AnimationOptions& = {});
+    void setZoom(double zoom, const EdgeInsets&, const AnimationOptions& = {});
     double getZoom() const;
     void setLatLngZoom(const LatLng&, double zoom, const AnimationOptions& = {});
-    void setLatLngZoom(const LatLng&, double zoom, optional<EdgeInsets>, const AnimationOptions& = {});
-    CameraOptions cameraForLatLngBounds(const LatLngBounds&, optional<EdgeInsets>) const;
-    CameraOptions cameraForLatLngs(const std::vector<LatLng>&, optional<EdgeInsets>) const;
+    void setLatLngZoom(const LatLng&, double zoom, const EdgeInsets&, const AnimationOptions& = {});
+    CameraOptions cameraForLatLngBounds(const LatLngBounds&, const EdgeInsets&) const;
+    CameraOptions cameraForLatLngs(const std::vector<LatLng>&, const EdgeInsets&) const;
+    LatLngBounds latLngBoundsForCamera(const CameraOptions&) const;
     void resetZoom();
-    void setMinZoom(const double minZoom);
+
+    // Bounds
+    void setLatLngBounds(optional<LatLngBounds>);
+    optional<LatLngBounds> getLatLngBounds() const;
+    void setMinZoom(double);
     double getMinZoom() const;
-    void setMaxZoom(const double maxZoom);
+    void setMaxZoom(double);
     double getMaxZoom() const;
+    void setMinPitch(double);
+    double getMinPitch() const;
+    void setMaxPitch(double);
+    double getMaxPitch() const;
 
     // Rotation
     void rotateBy(const ScreenCoordinate& first, const ScreenCoordinate& second, const AnimationOptions& = {});
     void setBearing(double degrees, const AnimationOptions& = {});
     void setBearing(double degrees, optional<ScreenCoordinate>, const AnimationOptions& = {});
-    void setBearing(double degrees, optional<EdgeInsets>, const AnimationOptions& = {});
+    void setBearing(double degrees, const EdgeInsets&, const AnimationOptions& = {});
     double getBearing() const;
     void resetNorth(const AnimationOptions& = {{mbgl::Milliseconds(500)}});
-    void resetNorth(optional<EdgeInsets>, const AnimationOptions& = {{mbgl::Milliseconds(500)}});
+    void resetNorth(const EdgeInsets&, const AnimationOptions& = {{mbgl::Milliseconds(500)}});
 
     // Pitch
     void setPitch(double pitch, const AnimationOptions& = {});
@@ -143,53 +137,35 @@ public:
     Size getSize() const;
 
     // Projection
-    double getMetersPerPixelAtLatitude(double lat, double zoom) const;
-    ProjectedMeters projectedMetersForLatLng(const LatLng&) const;
-    LatLng latLngForProjectedMeters(const ProjectedMeters&) const;
     ScreenCoordinate pixelForLatLng(const LatLng&) const;
     LatLng latLngForPixel(const ScreenCoordinate&) const;
 
     // Annotations
-    void addAnnotationIcon(const std::string&, std::shared_ptr<const SpriteImage>);
-    void removeAnnotationIcon(const std::string&);
-    double getTopOffsetPixelsForAnnotationIcon(const std::string&);
+    void addAnnotationImage(std::unique_ptr<style::Image>);
+    void removeAnnotationImage(const std::string&);
+    double getTopOffsetPixelsForAnnotationImage(const std::string&);
 
     AnnotationID addAnnotation(const Annotation&);
     void updateAnnotation(AnnotationID, const Annotation&);
     void removeAnnotation(AnnotationID);
 
-    // Sources
-    std::vector<style::Source*> getSources();
-    style::Source* getSource(const std::string& sourceID);
-    void addSource(std::unique_ptr<style::Source>);
-    std::unique_ptr<style::Source> removeSource(const std::string& sourceID);
-
-    // Layers
-    std::vector<style::Layer*> getLayers();
-    style::Layer* getLayer(const std::string& layerID);
-    void addLayer(std::unique_ptr<style::Layer>, const optional<std::string>& beforeLayerID = {});
-    std::unique_ptr<style::Layer> removeLayer(const std::string& layerID);
-
-    // Add image, bound to the style
-    void addImage(const std::string&, std::unique_ptr<const SpriteImage>);
-    void removeImage(const std::string&);
-    const SpriteImage* getImage(const std::string&);
-
-    // Defaults
-    std::string getStyleName() const;
-    LatLng getDefaultLatLng() const;
-    double getDefaultZoom() const;
-    double getDefaultBearing() const;
-    double getDefaultPitch() const;
-
     // Feature queries
     std::vector<Feature> queryRenderedFeatures(const ScreenCoordinate&, const RenderedQueryOptions& options = {});
     std::vector<Feature> queryRenderedFeatures(const ScreenBox&,        const RenderedQueryOptions& options = {});
+    std::vector<Feature> querySourceFeatures(const std::string& sourceID, const SourceQueryOptions& options = {});
 
     AnnotationIDs queryPointAnnotations(const ScreenBox&);
 
+    // Tile prefetching
+    //
+    // When loading a map, if `PrefetchZoomDelta` is set to any number greater than 0, the map will
+    // first request a tile for `zoom = getZoom() - delta` in a attempt to display a full map at
+    // lower resolution as quick as possible. It will get clamped at the tile source minimum zoom.
+    // The default `delta` is 4.
+    void setPrefetchZoomDelta(uint8_t delta);
+    uint8_t getPrefetchZoomDelta() const;
+
     // Memory
-    void setSourceTileCacheSize(size_t);
     void onLowMemory();
 
     // Debug

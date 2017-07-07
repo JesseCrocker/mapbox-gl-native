@@ -2,9 +2,15 @@
 
 #include <mbgl/storage/default_file_source.hpp>
 
+#include "asset_manager.hpp"
+
 #include <jni/jni.hpp>
 
 namespace mbgl {
+
+template <typename T> class Actor;
+class ResourceTransform;
+
 namespace android {
 
 /**
@@ -23,7 +29,7 @@ public:
         static jni::Class<ResourceTransformCallback> javaClass;
     };
 
-    FileSource(jni::JNIEnv&, jni::String, jni::String, jni::String);
+    FileSource(jni::JNIEnv&, jni::String, jni::String, jni::Object<AssetManager>);
 
     ~FileSource();
 
@@ -44,7 +50,7 @@ public:
     static void registerNative(jni::JNIEnv&);
 
 private:
-
+    std::unique_ptr<Actor<ResourceTransform>> resourceTransform;
     std::unique_ptr<mbgl::DefaultFileSource> fileSource;
 };
 

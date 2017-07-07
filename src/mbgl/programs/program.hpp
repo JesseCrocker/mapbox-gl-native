@@ -1,9 +1,15 @@
 #pragma once
 
 #include <mbgl/gl/program.hpp>
+#include <mbgl/gl/features.hpp>
+#include <mbgl/programs/binary_program.hpp>
 #include <mbgl/programs/attributes.hpp>
+#include <mbgl/programs/program_parameters.hpp>
 #include <mbgl/style/paint_property.hpp>
 #include <mbgl/shaders/shaders.hpp>
+#include <mbgl/util/io.hpp>
+
+#include <unordered_map>
 
 namespace mbgl {
 
@@ -11,12 +17,13 @@ template <class Shaders,
           class Primitive,
           class LayoutAttrs,
           class Uniforms,
-          class PaintProperties>
+          class PaintProps>
 class Program {
 public:
     using LayoutAttributes = LayoutAttrs;
     using LayoutVertex = typename LayoutAttributes::Vertex;
 
+    using PaintProperties = PaintProps;
     using PaintPropertyBinders = typename PaintProperties::Binders;
     using PaintAttributes = typename PaintPropertyBinders::Attributes;
     using Attributes = gl::ConcatenateAttributes<LayoutAttributes, PaintAttributes>;
@@ -30,10 +37,13 @@ public:
     ProgramType program;
 
     Program(gl::Context& context, const ProgramParameters& programParameters)
-        : program(context,
-                  shaders::vertexSource(programParameters, Shaders::vertexSource),
-                  shaders::fragmentSource(programParameters, Shaders::fragmentSource))
-        {}
+        : program(ProgramType::createProgram(
+            context,
+            programParameters,
+            Shaders::name,
+            Shaders::vertexSource,
+            Shaders::fragmentSource)) {
+    }
 
     template <class DrawMode>
     void draw(gl::Context& context,
@@ -46,7 +56,7 @@ public:
               const gl::IndexBuffer<DrawMode>& indexBuffer,
               const gl::SegmentVector<Attributes>& segments,
               const PaintPropertyBinders& paintPropertyBinders,
-              const typename PaintProperties::Evaluated& currentProperties,
+              const typename PaintProperties::PossiblyEvaluated& currentProperties,
               float currentZoom) {
         program.draw(
             context,
@@ -55,13 +65,43 @@ public:
             std::move(stencilMode),
             std::move(colorMode),
             uniformValues
-                .concat(paintPropertyBinders.uniformValues(currentZoom)),
-            LayoutAttributes::allVariableBindings(layoutVertexBuffer)
+                .concat(paintPropertyBinders.uniformValues(currentZoom, currentProperties)),
+            LayoutAttributes::bindings(layoutVertexBuffer)
                 .concat(paintPropertyBinders.attributeBindings(currentProperties)),
             indexBuffer,
             segments
         );
     }
+};
+
+template <class Program>
+class ProgramMap {
+public:
+    using PaintProperties = typename Program::PaintProperties;
+    using PaintPropertyBinders = typename Program::PaintPropertyBinders;
+    using Bitset = typename PaintPropertyBinders::Bitset;
+
+    ProgramMap(gl::Context& context_, ProgramParameters parameters_)
+        : context(context_),
+          parameters(std::move(parameters_)) {
+    }
+
+    Program& get(const typename PaintProperties::PossiblyEvaluated& currentProperties) {
+        Bitset bits = PaintPropertyBinders::constants(currentProperties);
+        auto it = programs.find(bits);
+        if (it != programs.end()) {
+            return it->second;
+        }
+        return programs.emplace(std::piecewise_construct,
+                                std::forward_as_tuple(bits),
+                                std::forward_as_tuple(context,
+                                    parameters.withAdditionalDefines(PaintPropertyBinders::defines(currentProperties)))).first->second;
+    }
+
+private:
+    gl::Context& context;
+    ProgramParameters parameters;
+    std::unordered_map<Bitset, Program> programs;
 };
 
 } // namespace mbgl

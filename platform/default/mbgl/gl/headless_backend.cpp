@@ -9,8 +9,7 @@
 
 namespace mbgl {
 
-HeadlessBackend::HeadlessBackend() {
-}
+HeadlessBackend::HeadlessBackend() = default;
 
 HeadlessBackend::HeadlessBackend(std::shared_ptr<HeadlessDisplay> display_)
         : display(std::move(display_)) {
@@ -33,17 +32,16 @@ void HeadlessBackend::activate() {
 
     assert(hasContext());
     impl->activateContext();
-
-    if (!extensionsLoaded) {
-        gl::InitializeExtensions(initializeExtension);
-        extensionsLoaded = true;
-    }
 }
 
 void HeadlessBackend::deactivate() {
     assert(hasContext());
     impl->deactivateContext();
     active = false;
+}
+
+void HeadlessBackend::updateAssumedState() {
+    // no-op
 }
 
 void HeadlessBackend::invalidate() {

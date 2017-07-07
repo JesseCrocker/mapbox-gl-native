@@ -7,8 +7,6 @@ target_compile_options(mbgl-render
 )
 
 target_include_directories(mbgl-render
-    PRIVATE include
-    PRIVATE src # TODO: eliminate
     PRIVATE platform/default
 )
 
@@ -22,3 +20,22 @@ target_add_mason_package(mbgl-render PRIVATE boost_libprogram_options)
 mbgl_platform_render()
 
 create_source_groups(mbgl-render)
+
+xcode_create_scheme(
+    TARGET mbgl-render
+    OPTIONAL_ARGS
+        "--style=file.json"
+        "--lon=0"
+        "--lat=0"
+        "--zoom=0"
+        "--bearing=0"
+        "--pitch=0"
+        "--width=512"
+        "--height=512"
+        "--ratio=1"
+        "--token="
+        "--debug"
+        "--output=out.png"
+        "--cache=cache.sqlite"
+        "--assets=."
+)

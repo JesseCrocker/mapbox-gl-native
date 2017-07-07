@@ -1,11 +1,28 @@
 // This file is generated.
-// Edit platform/darwin/scripts/generate-style-code.js, then run `make style-code-darwin`.
+// Edit platform/darwin/scripts/generate-style-code.js, then run `make darwin-style-code`.
 
 #import "MGLFoundation.h"
 #import "MGLStyleValue.h"
 #import "MGLVectorStyleLayer.h"
 
 NS_ASSUME_NONNULL_BEGIN
+
+/**
+ Orientation of circle when map is pitched.
+
+ Values of this type are used in the `MGLCircleStyleLayer.circlePitchAlignment`
+ property.
+ */
+typedef NS_ENUM(NSUInteger, MGLCirclePitchAlignment) {
+    /**
+     The circle is aligned to the plane of the map.
+     */
+    MGLCirclePitchAlignmentMap,
+    /**
+     The circle is aligned to the plane of the viewport.
+     */
+    MGLCirclePitchAlignmentViewport,
+};
 
 /**
  Controls the scaling behavior of the circle when the map is pitched.
@@ -79,6 +96,21 @@ typedef NS_ENUM(NSUInteger, MGLCircleTranslationAnchor) {
 MGL_EXPORT
 @interface MGLCircleStyleLayer : MGLVectorStyleLayer
 
+/**
+ Returns a circle style layer initialized with an identifier and source.
+
+ After initializing and configuring the style layer, add it to a map view’s
+ style using the `-[MGLStyle addLayer:]` or
+ `-[MGLStyle insertLayer:belowLayer:]` method.
+
+ @param identifier A string that uniquely identifies the source in the style to
+    which it is added.
+ @param source The source from which to obtain the data to style. If the source
+    has not yet been added to the current style, the behavior is undefined.
+ @return An initialized foreground style layer.
+ */
+- (instancetype)initWithIdentifier:(NSString *)identifier source:(MGLSource *)source;
+
 #pragma mark - Accessing the Paint Attributes
 
 /**
@@ -91,7 +123,7 @@ MGL_EXPORT
  
  You can set this property to an instance of:
  
- * `MGLStyleConstantValue`
+ * `MGLConstantStyleValue`
  * `MGLCameraStyleFunction` with an interpolation mode of:
    * `MGLInterpolationModeExponential`
    * `MGLInterpolationModeInterval`
@@ -107,6 +139,13 @@ MGL_EXPORT
  */
 @property (nonatomic, null_resettable) MGLStyleValue<NSNumber *> *circleBlur;
 
+/**
+ The transition affecting any changes to this layer’s `circleBlur` property.
+
+ This property corresponds to the `circle-blur-transition` property in the style JSON file format.
+*/
+@property (nonatomic) MGLTransition circleBlurTransition;
+
 #if TARGET_OS_IPHONE
 /**
  The fill color of the circle.
@@ -117,7 +156,7 @@ MGL_EXPORT
  
  You can set this property to an instance of:
  
- * `MGLStyleConstantValue`
+ * `MGLConstantStyleValue`
  * `MGLCameraStyleFunction` with an interpolation mode of:
    * `MGLInterpolationModeExponential`
    * `MGLInterpolationModeInterval`
@@ -142,7 +181,7 @@ MGL_EXPORT
  
  You can set this property to an instance of:
  
- * `MGLStyleConstantValue`
+ * `MGLConstantStyleValue`
  * `MGLCameraStyleFunction` with an interpolation mode of:
    * `MGLInterpolationModeExponential`
    * `MGLInterpolationModeInterval`
@@ -160,6 +199,13 @@ MGL_EXPORT
 #endif
 
 /**
+ The transition affecting any changes to this layer’s `circleColor` property.
+
+ This property corresponds to the `circle-color-transition` property in the style JSON file format.
+*/
+@property (nonatomic) MGLTransition circleColorTransition;
+
+/**
  The opacity at which the circle will be drawn.
  
  The default value of this property is an `MGLStyleValue` object containing an
@@ -168,7 +214,7 @@ MGL_EXPORT
  
  You can set this property to an instance of:
  
- * `MGLStyleConstantValue`
+ * `MGLConstantStyleValue`
  * `MGLCameraStyleFunction` with an interpolation mode of:
    * `MGLInterpolationModeExponential`
    * `MGLInterpolationModeInterval`
@@ -185,6 +231,28 @@ MGL_EXPORT
 @property (nonatomic, null_resettable) MGLStyleValue<NSNumber *> *circleOpacity;
 
 /**
+ The transition affecting any changes to this layer’s `circleOpacity` property.
+
+ This property corresponds to the `circle-opacity-transition` property in the style JSON file format.
+*/
+@property (nonatomic) MGLTransition circleOpacityTransition;
+
+/**
+ Orientation of circle when map is pitched.
+ 
+ The default value of this property is an `MGLStyleValue` object containing an
+ `NSValue` object containing `MGLCirclePitchAlignmentViewport`. Set this
+ property to `nil` to reset it to the default value.
+ 
+ You can set this property to an instance of:
+ 
+ * `MGLConstantStyleValue`
+ * `MGLCameraStyleFunction` with an interpolation mode of
+ `MGLInterpolationModeInterval`
+ */
+@property (nonatomic, null_resettable) MGLStyleValue<NSValue *> *circlePitchAlignment;
+
+/**
  Circle radius.
  
  This property is measured in points.
@@ -195,7 +263,7 @@ MGL_EXPORT
  
  You can set this property to an instance of:
  
- * `MGLStyleConstantValue`
+ * `MGLConstantStyleValue`
  * `MGLCameraStyleFunction` with an interpolation mode of:
    * `MGLInterpolationModeExponential`
    * `MGLInterpolationModeInterval`
@@ -212,6 +280,13 @@ MGL_EXPORT
 @property (nonatomic, null_resettable) MGLStyleValue<NSNumber *> *circleRadius;
 
 /**
+ The transition affecting any changes to this layer’s `circleRadius` property.
+
+ This property corresponds to the `circle-radius-transition` property in the style JSON file format.
+*/
+@property (nonatomic) MGLTransition circleRadiusTransition;
+
+/**
  Controls the scaling behavior of the circle when the map is pitched.
  
  The default value of this property is an `MGLStyleValue` object containing an
@@ -224,7 +299,7 @@ MGL_EXPORT
  
  You can set this property to an instance of:
  
- * `MGLStyleConstantValue`
+ * `MGLConstantStyleValue`
  * `MGLCameraStyleFunction` with an interpolation mode of
  `MGLInterpolationModeInterval`
  */
@@ -242,7 +317,7 @@ MGL_EXPORT
  
  You can set this property to an instance of:
  
- * `MGLStyleConstantValue`
+ * `MGLConstantStyleValue`
  * `MGLCameraStyleFunction` with an interpolation mode of:
    * `MGLInterpolationModeExponential`
    * `MGLInterpolationModeInterval`
@@ -267,7 +342,7 @@ MGL_EXPORT
  
  You can set this property to an instance of:
  
- * `MGLStyleConstantValue`
+ * `MGLConstantStyleValue`
  * `MGLCameraStyleFunction` with an interpolation mode of:
    * `MGLInterpolationModeExponential`
    * `MGLInterpolationModeInterval`
@@ -285,6 +360,13 @@ MGL_EXPORT
 #endif
 
 /**
+ The transition affecting any changes to this layer’s `circleStrokeColor` property.
+
+ This property corresponds to the `circle-stroke-color-transition` property in the style JSON file format.
+*/
+@property (nonatomic) MGLTransition circleStrokeColorTransition;
+
+/**
  The opacity of the circle's stroke.
  
  The default value of this property is an `MGLStyleValue` object containing an
@@ -293,7 +375,7 @@ MGL_EXPORT
  
  You can set this property to an instance of:
  
- * `MGLStyleConstantValue`
+ * `MGLConstantStyleValue`
  * `MGLCameraStyleFunction` with an interpolation mode of:
    * `MGLInterpolationModeExponential`
    * `MGLInterpolationModeInterval`
@@ -310,6 +392,13 @@ MGL_EXPORT
 @property (nonatomic, null_resettable) MGLStyleValue<NSNumber *> *circleStrokeOpacity;
 
 /**
+ The transition affecting any changes to this layer’s `circleStrokeOpacity` property.
+
+ This property corresponds to the `circle-stroke-opacity-transition` property in the style JSON file format.
+*/
+@property (nonatomic) MGLTransition circleStrokeOpacityTransition;
+
+/**
  The width of the circle's stroke. Strokes are placed outside of the
  `circleRadius`.
  
@@ -321,7 +410,7 @@ MGL_EXPORT
  
  You can set this property to an instance of:
  
- * `MGLStyleConstantValue`
+ * `MGLConstantStyleValue`
  * `MGLCameraStyleFunction` with an interpolation mode of:
    * `MGLInterpolationModeExponential`
    * `MGLInterpolationModeInterval`
@@ -336,6 +425,13 @@ MGL_EXPORT
    * `MGLInterpolationModeCategorical`
  */
 @property (nonatomic, null_resettable) MGLStyleValue<NSNumber *> *circleStrokeWidth;
+
+/**
+ The transition affecting any changes to this layer’s `circleStrokeWidth` property.
+
+ This property corresponds to the `circle-stroke-width-transition` property in the style JSON file format.
+*/
+@property (nonatomic) MGLTransition circleStrokeWidthTransition;
 
 #if TARGET_OS_IPHONE
 /**
@@ -353,7 +449,7 @@ MGL_EXPORT
  
  You can set this property to an instance of:
  
- * `MGLStyleConstantValue`
+ * `MGLConstantStyleValue`
  * `MGLCameraStyleFunction` with an interpolation mode of:
    * `MGLInterpolationModeExponential`
    * `MGLInterpolationModeInterval`
@@ -375,13 +471,20 @@ MGL_EXPORT
  
  You can set this property to an instance of:
  
- * `MGLStyleConstantValue`
+ * `MGLConstantStyleValue`
  * `MGLCameraStyleFunction` with an interpolation mode of:
    * `MGLInterpolationModeExponential`
    * `MGLInterpolationModeInterval`
  */
 @property (nonatomic, null_resettable) MGLStyleValue<NSValue *> *circleTranslation;
 #endif
+
+/**
+ The transition affecting any changes to this layer’s `circleTranslation` property.
+
+ This property corresponds to the `circle-translate-transition` property in the style JSON file format.
+*/
+@property (nonatomic) MGLTransition circleTranslationTransition;
 
 @property (nonatomic, null_resettable) MGLStyleValue<NSValue *> *circleTranslate __attribute__((unavailable("Use circleTranslation instead.")));
 
@@ -401,7 +504,7 @@ MGL_EXPORT
  
  You can set this property to an instance of:
  
- * `MGLStyleConstantValue`
+ * `MGLConstantStyleValue`
  * `MGLCameraStyleFunction` with an interpolation mode of
  `MGLInterpolationModeInterval`
  */
@@ -418,6 +521,19 @@ MGL_EXPORT
 @interface NSValue (MGLCircleStyleLayerAdditions)
 
 #pragma mark Working with Circle Style Layer Attribute Values
+
+/**
+ Creates a new value object containing the given `MGLCirclePitchAlignment` enumeration.
+
+ @param circlePitchAlignment The value for the new object.
+ @return A new value object that contains the enumeration value.
+ */
++ (instancetype)valueWithMGLCirclePitchAlignment:(MGLCirclePitchAlignment)circlePitchAlignment;
+
+/**
+ The `MGLCirclePitchAlignment` enumeration representation of the value.
+ */
+@property (readonly) MGLCirclePitchAlignment MGLCirclePitchAlignmentValue;
 
 /**
  Creates a new value object containing the given `MGLCircleScaleAlignment` enumeration.
