@@ -139,6 +139,11 @@ public:
      */
     void resume();
 
+    /*
+     * Sets the size of the ambient offline cache of tiles
+     */
+    void setMaximumCacheSize(uint64_t) const;
+
     // For testing only.
     void put(const Resource&, const Response&);
 
