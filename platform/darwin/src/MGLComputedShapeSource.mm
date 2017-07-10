@@ -95,13 +95,14 @@
 
 - (instancetype)initWithIdentifier:(NSString *)identifier options:(NS_DICTIONARY_OF(MGLShapeSourceOption, id) *)options {
     auto geoJSONOptions = MGLGeoJSONOptionsFromDictionary(options);
+    __weak MGLComputedShapeSource * welf = self;
     auto source = std::make_unique<mbgl::style::CustomVectorSource>
     (identifier.UTF8String, geoJSONOptions,
      ^void(const mbgl::CanonicalTileID& tileID, mbgl::style::FetchTileCallback callback)
      {
-         MGLComputedShapeSourceFetchOperation *operation = [[MGLComputedShapeSourceFetchOperation alloc] initForSource:self tile:tileID callback:callback];
+         MGLComputedShapeSourceFetchOperation *operation = [[MGLComputedShapeSourceFetchOperation alloc] initForSource:welf tile:tileID callback:callback];
          operation.callback = callback;
-         [self.requestQueue addOperation:operation];
+         [welf.requestQueue addOperation:operation];
      });
 
     if (self = [super initWithPendingSource:std::move(source)]) {
