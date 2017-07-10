@@ -4,6 +4,9 @@
 #include <mbgl/style/sources/geojson_source.hpp>
 #include <mbgl/util/range.hpp>
 
+#include <mapbox/geojsonvt.hpp>
+#include <supercluster.hpp>
+
 namespace mbgl {
 
 class AsyncRequest;
@@ -17,6 +20,28 @@ public:
     virtual mapbox::geometry::feature_collection<int16_t> getTile(const CanonicalTileID&) = 0;
 };
 
+class GeoJSONVTData : public GeoJSONData {
+public:
+    GeoJSONVTData(const GeoJSON& geoJSON,
+                  const mapbox::geojsonvt::Options& options);
+    
+    mapbox::geometry::feature_collection<int16_t> getTile(const CanonicalTileID& tileID) final;
+    
+private:
+    mapbox::geojsonvt::GeoJSONVT impl;
+};
+  
+class SuperclusterData : public GeoJSONData {
+public:
+    SuperclusterData(const mapbox::geometry::feature_collection<double>& features,
+                     const mapbox::supercluster::Options& options);
+    
+    mapbox::geometry::feature_collection<int16_t> getTile(const CanonicalTileID& tileID) final;
+    
+private:
+    mapbox::supercluster::Supercluster impl;
+};
+  
 class GeoJSONSource::Impl : public Source::Impl {
 public:
     Impl(std::string id, GeoJSONOptions);

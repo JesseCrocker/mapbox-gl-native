@@ -8,14 +8,16 @@
 namespace mbgl {
 namespace style {
 
+typedef std::function<void(const CanonicalTileID& tileID, const mapbox::geojson::geojson&)> FetchTileCallback;
+typedef std::function<void(const CanonicalTileID&, FetchTileCallback)> FetchTileFunction;
+
 class CustomVectorSource : public Source {
 public:
     CustomVectorSource(const std::string& id,
                        const GeoJSONOptions& options,
-                       std::function<void(const CanonicalTileID&)> fetchTile);
+                       FetchTileFunction fetchTile);
     ~CustomVectorSource() final;
   
-    void setTileData(const CanonicalTileID&, const mapbox::geojson::geojson&);
     void reloadTile(const CanonicalTileID&);
     void reloadRegion(mbgl::LatLngBounds bounds, uint8_t z);
     void reload();

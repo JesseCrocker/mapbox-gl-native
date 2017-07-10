@@ -30,15 +30,15 @@
 @property (nonatomic, assign) BOOL dataSourceImplementsFeaturesForTile;
 @property (nonatomic, assign) BOOL dataSourceImplementsFeaturesForBounds;
 @property (nonatomic, weak, nullable) id<MGLComputedShapeSourceDataSource> dataSource;
-@property (nonatomic, nullable) mbgl::style::CustomVectorSource *rawSource;
+@property (nonatomic) mbgl::style::FetchTileCallback callback;
 
-- (instancetype)initForSource:(MGLComputedShapeSource*)source tile:(const mbgl::CanonicalTileID&)tileId;
+- (instancetype)initForSource:(MGLComputedShapeSource*)source tile:(const mbgl::CanonicalTileID&)tileId callback:(mbgl::style::FetchTileCallback)callback;
 
 @end
 
 @implementation MGLComputedShapeSourceFetchOperation
 
-- (instancetype)initForSource:(MGLComputedShapeSource*)source tile:(const mbgl::CanonicalTileID&)tileID {
+- (instancetype)initForSource:(MGLComputedShapeSource*)source tile:(const mbgl::CanonicalTileID&)tileID callback:(mbgl::style::FetchTileCallback)callback {
     self = [super init];
     _z = tileID.z;
     _x = tileID.x;
@@ -46,8 +46,7 @@
     _dataSourceImplementsFeaturesForTile = source.dataSourceImplementsFeaturesForTile;
     _dataSourceImplementsFeaturesForBounds = source.dataSourceImplementsFeaturesForBounds;
     _dataSource = source.dataSource;
-    mbgl::style::CustomVectorSource *rawSource = (mbgl::style::CustomVectorSource *)source.rawSource;
-    _rawSource = rawSource;
+    _callback = callback;
     return self;
 }
 
@@ -79,8 +78,8 @@
         }
         const auto geojson = mbgl::GeoJSON{featureCollection};
         dispatch_sync(dispatch_get_main_queue(), ^{
-            if(![self isCancelled] && self.rawSource) {
-                self.rawSource->setTileData(mbgl::CanonicalTileID(self.z, self.x, self.y), geojson);
+            if(![self isCancelled] && self.callback) {
+                self.callback(mbgl::CanonicalTileID(self.z, self.x, self.y), geojson);
             }
         });
     }
@@ -88,7 +87,6 @@
 
 - (void)cancel {
     [super cancel];
-    self.rawSource = NULL;
 }
 
 @end
@@ -99,9 +97,10 @@
     auto geoJSONOptions = MGLGeoJSONOptionsFromDictionary(options);
     auto source = std::make_unique<mbgl::style::CustomVectorSource>
     (identifier.UTF8String, geoJSONOptions,
-     ^void(const mbgl::CanonicalTileID& tileID)
+     ^void(const mbgl::CanonicalTileID& tileID, mbgl::style::FetchTileCallback callback)
      {
-         NSOperation *operation = [[MGLComputedShapeSourceFetchOperation alloc] initForSource:self tile:tileID];
+         MGLComputedShapeSourceFetchOperation *operation = [[MGLComputedShapeSourceFetchOperation alloc] initForSource:self tile:tileID callback:callback];
+         operation.callback = callback;
          [self.requestQueue addOperation:operation];
      });
 
@@ -134,7 +133,6 @@
 - (mbgl::style::CustomVectorSource *)rawSource {
     return (mbgl::style::CustomVectorSource *)super.rawSource;
 }
-
 
 - (void)reloadTileInCoordinateBounds:(MGLCoordinateBounds)bounds zoomLevel:(NSUInteger)zoomLevel {
     self.rawSource->reloadRegion(MGLLatLngBoundsFromCoordinateBounds(bounds), (uint8_t)zoomLevel);

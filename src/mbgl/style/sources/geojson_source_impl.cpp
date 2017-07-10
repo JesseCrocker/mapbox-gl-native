@@ -8,33 +8,23 @@
 namespace mbgl {
 namespace style {
 
-class GeoJSONVTData : public GeoJSONData {
-public:
-    GeoJSONVTData(const GeoJSON& geoJSON,
+GeoJSONVTData::GeoJSONVTData(const GeoJSON& geoJSON,
                   const mapbox::geojsonvt::Options& options)
         : impl(geoJSON, options) {}
 
-    mapbox::geometry::feature_collection<int16_t> getTile(const CanonicalTileID& tileID) final {
-        return impl.getTile(tileID.z, tileID.x, tileID.y).features;
-    }
+mapbox::geometry::feature_collection<int16_t> GeoJSONVTData::getTile(const CanonicalTileID& tileID) {
+  return impl.getTile(tileID.z, tileID.x, tileID.y).features;
+}
 
-private:
-    mapbox::geojsonvt::GeoJSONVT impl;
-};
 
-class SuperclusterData : public GeoJSONData {
-public:
-    SuperclusterData(const mapbox::geometry::feature_collection<double>& features,
-                     const mapbox::supercluster::Options& options)
-        : impl(features, options) {}
+SuperclusterData::SuperclusterData(const mapbox::geometry::feature_collection<double>& features,
+                                   const mapbox::supercluster::Options& options)
+  : impl(features, options) {}
 
-    mapbox::geometry::feature_collection<int16_t> getTile(const CanonicalTileID& tileID) final {
-        return impl.getTile(tileID.z, tileID.x, tileID.y);
-    }
+mapbox::geometry::feature_collection<int16_t> SuperclusterData::getTile(const CanonicalTileID& tileID) {
+  return impl.getTile(tileID.z, tileID.x, tileID.y);
+}
 
-private:
-    mapbox::supercluster::Supercluster impl;
-};
 
 GeoJSONSource::Impl::Impl(std::string id_, GeoJSONOptions options_)
     : Source::Impl(SourceType::GeoJSON, std::move(id_)),

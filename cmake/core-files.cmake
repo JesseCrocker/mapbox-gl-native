@@ -247,6 +247,8 @@ set(MBGL_CORE_FILES
     src/mbgl/renderer/painters/painter_symbol.cpp
 
     # renderer/sources
+    src/mbgl/renderer/sources/render_computed_source.cpp
+    src/mbgl/renderer/sources/render_computed_source.hpp
     src/mbgl/renderer/sources/render_geojson_source.cpp
     src/mbgl/renderer/sources/render_geojson_source.hpp
     src/mbgl/renderer/sources/render_image_source.cpp
