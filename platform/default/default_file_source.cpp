@@ -162,6 +162,10 @@ public:
         offlineDatabase.setOfflineMapboxTileCountLimit(limit);
     }
 
+    void setMaximumCacheSize(uint64_t cacheSize) {
+      offlineDatabase.setMaximumCacheSize(cacheSize);
+    }
+  
     void put(const Resource& resource, const Response& response) {
         offlineDatabase.put(resource, response);
     }
@@ -284,6 +288,10 @@ void DefaultFileSource::pause() {
 
 void DefaultFileSource::resume() {
     impl->resume();
+}
+  
+void DefaultFileSource::setMaximumCacheSize(uint64_t cacheSize) const {
+  impl->actor().invoke(&Impl::setMaximumCacheSize, cacheSize);
 }
 
 // For testing only:
