@@ -51,6 +51,9 @@ NSString * const MGLOfflinePackMaximumCountUserInfoKey = MGLOfflinePackUserInfoK
     static MGLOfflineStorage *sharedOfflineStorage;
     dispatch_once(&onceToken, ^{
         sharedOfflineStorage = [[self alloc] init];
+        if ([UIApplication sharedApplication].applicationState != UIApplicationStateActive ) {
+          [sharedOfflineStorage pauseFileSource:nil];
+        }
 #if TARGET_OS_IPHONE || TARGET_OS_SIMULATOR
         [[NSNotificationCenter defaultCenter] addObserver:sharedOfflineStorage selector:@selector(unpauseFileSource:) name:UIApplicationWillEnterForegroundNotification object:nil];
         [[NSNotificationCenter defaultCenter] addObserver:sharedOfflineStorage selector:@selector(pauseFileSource:) name:UIApplicationDidEnterBackgroundNotification object:nil];

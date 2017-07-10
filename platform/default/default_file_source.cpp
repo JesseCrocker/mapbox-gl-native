@@ -312,13 +312,13 @@ void DefaultFileSource::setOfflineMapboxTileCountLimit(uint64_t limit) const {
 
 void DefaultFileSource::pause() {
     impl->pause();
-    priorityImpl->pause();
+    //priorityImpl->pause();
 
 }
 
 void DefaultFileSource::resume() {
     impl->resume();
-    priorityImpl->resume();
+    //priorityImpl->resume();
 }
   
 void DefaultFileSource::setMaximumCacheSize(uint64_t cacheSize) const {
