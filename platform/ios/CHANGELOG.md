@@ -4,13 +4,11 @@ Mapbox welcomes participation and contributions from everyone. Please read [CONT
 
 ## master
 
-
 ### Styles
 
 * Added support for displaying geo-referenced images via the `MGLImageSource`.  [#9110](https://github.com/mapbox/mapbox-gl-native/pull/9110)
 * The previously-deprecated support for style classes has been removed. For interface compatibility, the API methods remain, but they are now non-functional.
 * Added an `overlays` property to `MGLMapView`. ([#8617](https://github.com/mapbox/mapbox-gl-native/pull/8617))
-* Added `MGLComputedShapeSource` source class that allows applications to supply vector data on a per-tile basis.
 
 ## 3.6.0
 
@@ -142,8 +140,8 @@ Mapbox welcomes participation and contributions from everyone. Please read [CONT
 * Fixed a memory leak in MGLMapView. ([#7956](https://github.com/mapbox/mapbox-gl-native/pull/7956))
 * Fixed an issue that could prevent a cached style from appearing while the device is offline. ([#7770](https://github.com/mapbox/mapbox-gl-native/pull/7770))
 * Fixed an issue that could prevent a style from loading when reestablishing a network connection. ([#7902](https://github.com/mapbox/mapbox-gl-native/pull/7902))
-* `MGLOfflineStorage` instances now support a delegate conforming to `MGLOfflineStorageDelegate`, which allows altering URLs before they are requested from the internet. ([#8084](https://github.com/mapbox/mapbox-gl-native/pull/8084))
-* Added function to set the maximum cache size of `MGLOfflineStorage`
+* `MGLOfflineStorage` instances now support a delegate conforming to `MGLOfflineStorageDelegate`, which allows altering URLs before they are requested from the Internet. ([#8084](https://github.com/mapbox/mapbox-gl-native/pull/8084))
+* Changed the eviction strategy. The entire maximumCacheSize is now available for ambiently cached items.
 
 ### Other changes
 
@@ -155,7 +153,6 @@ Mapbox welcomes participation and contributions from everyone. Please read [CONT
 * Fixed an issue that was causing the system location indicator to stay on in background after telemetry was disabled. ([#7833](https://github.com/mapbox/mapbox-gl-native/pull/7833))
 * Added support for predicates in rendered feature querying [8256](https://github.com/mapbox/mapbox-gl-native/pull/8246)
 * Added a nightly build of the dynamic framework. ([#8337](https://github.com/mapbox/mapbox-gl-native/pull/8337))
-* Added optional tileList parameter to MGLTilePyramidOfflineRegion to download non-rectangular offline packs, such as along a track.
 
 ## 3.4.2 - February 21, 2017
 
