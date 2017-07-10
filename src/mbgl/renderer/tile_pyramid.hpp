@@ -15,6 +15,7 @@
 #include <unordered_map>
 #include <vector>
 #include <map>
+#include <set>
 
 namespace mbgl {
 
