@@ -109,7 +109,22 @@ public:
     void setRegionDownloadState(int64_t regionID, OfflineRegionDownloadState state) {
         getDownload(regionID).setState(state);
     }
-
+  
+    void simpleRequest(Resource resource, optional<Response> * response) {
+      Resource revalidation = resource;
+      auto offlineResponse = offlineDatabase.get(resource);
+      
+      if (!offlineResponse) {
+        // Ensure there's always a response that we can send, so the caller knows that
+        // there's no optional data available in the cache.
+        offlineResponse.emplace();
+        offlineResponse->noContent = true;
+        offlineResponse->error = std::make_unique<Response::Error>(
+                                                                   Response::Error::Reason::NotFound, "Not found in offline database");
+      }
+      *response = std::move(offlineResponse);
+    }
+  
     void request(AsyncRequest* req, Resource resource, ActorRef<FileSourceRequest> ref) {
         auto callback = [ref] (const Response& res) mutable {
             ref.invoke(&FileSourceRequest::setResponse, res);
@@ -144,6 +159,7 @@ public:
                     revalidation.priorEtag = offlineResponse->etag;
                     callback(*offlineResponse);
                 }
+
             }
 
             // Get from the online file source
@@ -309,10 +325,20 @@ void DefaultFileSource::setMaximumCacheSize(uint64_t cacheSize) const {
   impl->actor().invoke(&Impl::setMaximumCacheSize, cacheSize);
 }
 
+optional<Response> DefaultFileSource::fetchTile(int x, int y, int z, int pixel_ratio, const std::string& urlTemplate) {
+ 
+  Resource resource = Resource::tile(urlTemplate, pixel_ratio, x, y, z, Tileset::Scheme::XYZ, Resource::Necessity::Optional);
+  optional<Response> response;
+  //TODO:(wibge) this isn't doing a synchronous request, need to figure out how
+  priorityImpl->actor().invoke(&Impl::simpleRequest, resource, &response);
+
+  return response;
+  
+}
 // For testing only:
 
 void DefaultFileSource::put(const Resource& resource, const Response& response) {
-    impl->actor().invoke(&Impl::put, resource, response);
+    priorityImpl->actor().invoke(&Impl::put, resource, response);
 }
 
 } // namespace mbgl

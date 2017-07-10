@@ -13,6 +13,7 @@
 #include <mbgl/actor/actor.hpp>
 #include <mbgl/storage/resource_transform.hpp>
 #include <mbgl/util/run_loop.hpp>
+
 #include <mbgl/util/string.hpp>
 
 #include <memory>
@@ -379,6 +380,14 @@ NSString * const MGLOfflinePackMaximumCountUserInfoKey = MGLOfflinePackUserInfoK
   _mbglFileSource->setMaximumCacheSize(cacheSize);
 }
 
+
+- (NSData* _Nullable) fetchTile:(MGLTileID) tileId pixelRatio:(int) pixelRatio template:(NSString*) templateURL {
+  mbgl::optional<mbgl::Response> response = _mbglFileSource->fetchTile(tileId.x, tileId.y, tileId.z, pixelRatio, std::string([templateURL UTF8String]));
+  if (response && !response->noContent) {
+    return  [NSData dataWithBytes:response->data->c_str() length:response->data->length()];
+  }
+  return nil;
+}
 
 #pragma mark -
 
