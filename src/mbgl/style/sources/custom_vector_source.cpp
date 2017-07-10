@@ -1,5 +1,6 @@
 #include <mbgl/style/sources/custom_vector_source.hpp>
 #include <mbgl/style/sources/custom_vector_source_impl.hpp>
+#include <mbgl/style/source_observer.hpp>
 
 namespace mbgl {
 namespace style {
@@ -17,16 +18,22 @@ const CustomVectorSource::Impl& CustomVectorSource::impl() const {
     return static_cast<const Impl&>(*baseImpl);
 }
 
+/*
 void CustomVectorSource::reloadRegion(mbgl::LatLngBounds bounds, uint8_t z) {
-    impl().reloadRegion(bounds, z);
+  auto t = impl();
+  t.reloadRegion(bounds, z);
 }
 
 void CustomVectorSource::reloadTile(const CanonicalTileID& tileId) {
-    impl().reloadTile(tileId);
+    auto t = impl();
+    t.reloadTile(tileId);
 }
-
+*/
+ 
 void CustomVectorSource::reload() {
-    impl().reload();
+    auto t = impl();
+    t.reload();
+    observer->onSourceChanged(*this);
 }
   
 } // namespace style

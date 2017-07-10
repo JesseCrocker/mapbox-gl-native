@@ -34,9 +34,9 @@ void RenderComputedSource::update(Immutable<style::Source::Impl> baseImpl_,
     std::swap(baseImpl, baseImpl_);
 
     enabled = needsRendering;
-    
-    if (fetchTile.target_type() != impl().fetchTile.target_type() ||
-        fetchTile.target<void>() != impl().fetchTile.target<void>()) { //Not sure if this check is right
+    if (impl().needsReload() ||
+        (fetchTile.target_type() != impl().fetchTile.target_type() ||
+        fetchTile.target<void>() != impl().fetchTile.target<void>())) { //Not sure if this check is right
         fetchTile = impl().fetchTile;
         
         // TODO: this removes existing buckets, and will cause flickering.

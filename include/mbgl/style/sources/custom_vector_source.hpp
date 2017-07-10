@@ -18,8 +18,8 @@ public:
                        FetchTileFunction fetchTile);
     ~CustomVectorSource() final;
   
-    void reloadTile(const CanonicalTileID&);
-    void reloadRegion(mbgl::LatLngBounds bounds, uint8_t z);
+//    void reloadTile(const CanonicalTileID&);
+//    void reloadRegion(mbgl::LatLngBounds bounds, uint8_t z);
     void reload();
     void loadDescription(FileSource&) final {}
 

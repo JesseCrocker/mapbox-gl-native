@@ -30,32 +30,33 @@ uint16_t CustomVectorSource::Impl::getTileSize() const {
     return options.tileSize;
 }
 
-void CustomVectorSource::Impl::reloadTile(const CanonicalTileID& /*tileId*/) const {
-//    if (cache.has(OverscaledTileID(tileId.z, tileId.x, tileId.y))) {
-//        cache.clear();
-//    }
-//    for (auto const& item : tiles) {
-//        GeoJSONTile* tile = static_cast<GeoJSONTile*>(item.second.get());
-//        if (tile->id.canonical == tileId) {
-//            fetchTile(tileId);
-//        }
-//    }
+void CustomVectorSource::Impl::reload() {
+    reloadRequested = true;
 }
 
-void CustomVectorSource::Impl::reloadRegion(mbgl::LatLngBounds bounds, const uint8_t z) const {
+bool CustomVectorSource::Impl::needsReload() const {
+    return reloadRequested;
+}
+  
+/*
+void CustomVectorSource::Impl::reloadTile(const CanonicalTileID& tileId) {
+    if (cache.has(OverscaledTileID(tileId.z, tileId.x, tileId.y))) {
+        cache.clear();
+    }
+    for (auto const& item : tiles) {
+        GeoJSONTile* tile = static_cast<GeoJSONTile*>(item.second.get());
+        if (tile->id.canonical == tileId) {
+            fetchTile(tileId);
+        }
+    }
+}
+
+void CustomVectorSource::Impl::reloadRegion(mbgl::LatLngBounds bounds, const uint8_t z) {
     for (const auto& tile : mbgl::util::tileCover(bounds, z)) {
         reloadTile(tile.canonical);
     }
 }
-
-void CustomVectorSource::Impl::reload() const {
-/*    cache.clear();
-    for (auto const& item : tiles) {
-        GeoJSONTile* tile = static_cast<GeoJSONTile*>(item.second.get());
-        fetchTile(tile->id.canonical);
-    }
- */
-}
+*/
 
 optional<std::string> CustomVectorSource::Impl::getAttribution() const {
     return {};

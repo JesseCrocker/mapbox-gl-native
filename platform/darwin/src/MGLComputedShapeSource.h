@@ -55,7 +55,7 @@ MGL_EXPORT
 /**
  Request that the source reloads a region.
  */
-- (void)reloadTileInCoordinateBounds:(MGLCoordinateBounds)bounds zoomLevel:(NSUInteger)zoomLevel;
+//- (void)reloadTileInCoordinateBounds:(MGLCoordinateBounds)bounds zoomLevel:(NSUInteger)zoomLevel;
 
 /**
  Reload all tiles.

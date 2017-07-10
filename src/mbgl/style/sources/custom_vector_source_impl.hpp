@@ -14,17 +14,20 @@ public:
          GeoJSONOptions options,
          FetchTileFunction fetchTile);
     ~Impl() final;
-  
-    void reloadTile(const CanonicalTileID& tileID) const;
-    void reloadRegion(mbgl::LatLngBounds bounds, uint8_t z) const;
-    void reload() const;
+
+    void reload();
+//    void reloadTile(const CanonicalTileID& tileID);
+//    void reloadRegion(mbgl::LatLngBounds bounds, uint8_t z);
     Range<uint8_t> getZoomRange() const;
 
     optional<std::string> getAttribution() const final;
     FetchTileFunction fetchTile;
     GeoJSONOptions options;
+  
+    bool needsReload() const;
 
 private:
+    bool reloadRequested;
     uint16_t getTileSize() const;
 };
 

@@ -1455,6 +1455,9 @@ typedef NS_ENUM(NSInteger, MBXSettingsMiscellaneousRows) {
                                                                                source:source];
     labelLayer.text = [MGLStyleValue valueWithRawValue:@"{value}"];
     [self.mapView.style addLayer:labelLayer];
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(10 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+    [source reloadData];
+  });
 }
 
 - (void)styleLabelLanguageForLayersNamed:(NSArray<NSString *> *)layers

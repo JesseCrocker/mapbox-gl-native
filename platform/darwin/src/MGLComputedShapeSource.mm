@@ -135,14 +135,14 @@
     return (mbgl::style::CustomVectorSource *)super.rawSource;
 }
 
-- (void)reloadTileInCoordinateBounds:(MGLCoordinateBounds)bounds zoomLevel:(NSUInteger)zoomLevel {
-    self.rawSource->reloadRegion(MGLLatLngBoundsFromCoordinateBounds(bounds), (uint8_t)zoomLevel);
-}
+//- (void)reloadTileInCoordinateBounds:(MGLCoordinateBounds)bounds zoomLevel:(NSUInteger)zoomLevel {
+//    self.rawSource->reloadRegion(MGLLatLngBoundsFromCoordinateBounds(bounds), (uint8_t)zoomLevel);
+//}
 
-- (void)setNeedsUpdateAtZoomLevel:(NSUInteger)z x:(NSUInteger)x y:(NSUInteger)y {
-    mbgl::CanonicalTileID tileID = mbgl::CanonicalTileID((uint8_t)z, (uint32_t)x, (uint32_t)y);
-    self.rawSource->reloadTile(tileID);
-}
+//- (void)setNeedsUpdateAtZoomLevel:(NSUInteger)z x:(NSUInteger)x y:(NSUInteger)y {
+//    mbgl::CanonicalTileID tileID = mbgl::CanonicalTileID((uint8_t)z, (uint32_t)x, (uint32_t)y);
+//    self.rawSource->reloadTile(tileID);
+//}
 
 - (void)reloadData {
     [self.requestQueue cancelAllOperations];
