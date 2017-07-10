@@ -153,6 +153,8 @@ private:
     // Shared so destruction is done on this thread
     const std::shared_ptr<FileSource> assetFileSource;
     const std::unique_ptr<util::Thread<Impl>> impl;
+    const std::unique_ptr<util::Thread<Impl>> priorityImpl;
+
 
     std::mutex cachedBaseURLMutex;
     std::string cachedBaseURL = mbgl::util::API_BASE_URL;

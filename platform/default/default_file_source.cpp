@@ -26,6 +26,8 @@ bool isAssetURL(const std::string& url) {
 
 namespace mbgl {
 
+DefaultFileSource * global_ptr = 0;
+
 class DefaultFileSource::Impl {
 public:
     Impl(ActorRef<Impl>, std::shared_ptr<FileSource> assetFileSource_, const std::string& cachePath, uint64_t maximumCacheSize)
@@ -147,7 +149,9 @@ public:
             // Get from the online file source
             if (resource.necessity == Resource::Required) {
                 tasks[req] = onlineFileSource.request(revalidation, [=] (Response onlineResponse) mutable {
-                    this->offlineDatabase.put(revalidation, onlineResponse);
+                    // save the tile data to the database on the non priority thread
+                    global_ptr->impl->actor().invoke(&Impl::put, revalidation, onlineResponse);
+                    //this->offlineDatabase.put(revalidation, onlineResponse);
                     callback(onlineResponse);
                 });
             }
@@ -199,13 +203,19 @@ DefaultFileSource::DefaultFileSource(const std::string& cachePath,
                                      std::unique_ptr<FileSource>&& assetFileSource_,
                                      uint64_t maximumCacheSize)
         : assetFileSource(std::move(assetFileSource_))
-        , impl(std::make_unique<util::Thread<Impl>>("DefaultFileSource", assetFileSource, cachePath, maximumCacheSize)) {
+        , impl(std::make_unique<util::Thread<Impl>>("DefaultFileSource", assetFileSource, cachePath, maximumCacheSize))
+        , priorityImpl(std::make_unique<util::Thread<Impl>>("PriorityDefaultFileSource", assetFileSource, cachePath, maximumCacheSize)) {
+          
+          // make a global variable for this object so the priorityThread can find the regular thread to send work to.
+          // I couldn't figure out the syntax to just pass the regular thread to the priorityThread
+          global_ptr = this;
 }
 
 DefaultFileSource::~DefaultFileSource() = default;
 
 void DefaultFileSource::setAPIBaseURL(const std::string& baseURL) {
     impl->actor().invoke(&Impl::setAPIBaseURL, baseURL);
+    priorityImpl->actor().invoke(&Impl::setAPIBaseURL, baseURL);
 
     {
         std::lock_guard<std::mutex> lock(cachedBaseURLMutex);
@@ -220,6 +230,7 @@ std::string DefaultFileSource::getAPIBaseURL() {
 
 void DefaultFileSource::setAccessToken(const std::string& accessToken) {
     impl->actor().invoke(&Impl::setAccessToken, accessToken);
+    priorityImpl->actor().invoke(&Impl::setAccessToken, accessToken);
 
     {
         std::lock_guard<std::mutex> lock(cachedAccessTokenMutex);
@@ -234,14 +245,15 @@ std::string DefaultFileSource::getAccessToken() {
 
 void DefaultFileSource::setResourceTransform(optional<ActorRef<ResourceTransform>>&& transform) {
     impl->actor().invoke(&Impl::setResourceTransform, std::move(transform));
+    priorityImpl->actor().invoke(&Impl::setResourceTransform, std::move(transform));
 }
 
 std::unique_ptr<AsyncRequest> DefaultFileSource::request(const Resource& resource, Callback callback) {
     auto req = std::make_unique<FileSourceRequest>(std::move(callback));
 
-    req->onCancel([fs = impl->actor(), req = req.get()] () mutable { fs.invoke(&Impl::cancel, req); });
+    req->onCancel([fs = priorityImpl->actor(), req = req.get()] () mutable { fs.invoke(&Impl::cancel, req); });
 
-    impl->actor().invoke(&Impl::request, req.get(), resource, req->actor());
+    priorityImpl->actor().invoke(&Impl::request, req.get(), resource, req->actor());
 
     return std::move(req);
 }
@@ -284,10 +296,13 @@ void DefaultFileSource::setOfflineMapboxTileCountLimit(uint64_t limit) const {
 
 void DefaultFileSource::pause() {
     impl->pause();
+    priorityImpl->pause();
+
 }
 
 void DefaultFileSource::resume() {
     impl->resume();
+    priorityImpl->resume();
 }
   
 void DefaultFileSource::setMaximumCacheSize(uint64_t cacheSize) const {

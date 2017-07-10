@@ -347,6 +347,7 @@ bool OfflineDatabase::putResource(const Resource& resource,
 
 optional<std::pair<Response, uint64_t>> OfflineDatabase::getTile(const Resource::TileData& tile) {
     // clang-format off
+    /*
     Statement accessedStmt = getStatement(
         "UPDATE tiles "
         "SET accessed       = ?1 "
@@ -363,7 +364,7 @@ optional<std::pair<Response, uint64_t>> OfflineDatabase::getTile(const Resource:
     accessedStmt->bind(4, tile.x);
     accessedStmt->bind(5, tile.y);
     accessedStmt->bind(6, tile.z);
-    accessedStmt->run();
+    accessedStmt->run(); */
 
     // clang-format off
     Statement stmt = getStatement(
