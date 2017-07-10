@@ -160,6 +160,9 @@ This is the final scheduled version of the Mapbox iOS SDK that supports iOS 7. (
 * A programmatic change to an MGLMapView’s camera no longer resets the user tracking mode. ([#7856](https://github.com/mapbox/mapbox-gl-native/pull/7856))
 * Improved the performance of trivial camera animations. ([#7125](https://github.com/mapbox/mapbox-gl-native/pull/7125))
 * Added a guide detailing the built-in gesture recognizers and various ways to configure them. ([#7937](https://github.com/mapbox/mapbox-gl-native/pull/7937))
+* Fixed an issue that could prevent a cached style from appearing while the device is offline. ([#7770](https://github.com/mapbox/mapbox-gl-native/pull/7770))
+* Added `MGLDistanceFormatter` which can be used to format geographic distances. ([#7888](https://github.com/mapbox/mapbox-gl-native/pull/7888))
+* Fixed an issue where an offline pack downloaded from a server that returns 403s for missing tiles will not complete ([#7904](https://github.com/mapbox/mapbox-gl-native/pull/7904))
 
 ## 3.4.1 - January 25, 2017
 
