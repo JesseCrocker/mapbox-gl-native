@@ -37,6 +37,7 @@ void RenderComputedSource::update(Immutable<style::Source::Impl> baseImpl_,
     if (impl().needsReload() ||
         (fetchTile.target_type() != impl().fetchTile.target_type() ||
         fetchTile.target<void>() != impl().fetchTile.target<void>())) { //Not sure if this check is right
+        const_cast<style::CustomVectorSource::Impl&>(impl()).setReloaded();
         fetchTile = impl().fetchTile;
         
         // TODO: this removes existing buckets, and will cause flickering.
