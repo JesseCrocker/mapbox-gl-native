@@ -7,6 +7,7 @@
 * Added support for displaying geo-referenced images via the `MGLImageSource`.  [#9110](https://github.com/mapbox/mapbox-gl-native/pull/9110)
 * The previously-deprecated support for style classes has been removed. For interface compatibility, the API methods remain, but they are now non-functional.
 * Added an `overlays` property to `MGLMapView`. ([#8617](https://github.com/mapbox/mapbox-gl-native/pull/8617))
+* Added `MGLComputedShapeSource` source class that allows applications to supply vector data on a per-tile basis.
 
 ## 0.5.0
 

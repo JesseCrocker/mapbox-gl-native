@@ -14,6 +14,10 @@ public:
                 const TileParameters&,
                 mapbox::geometry::feature_collection<int16_t>);
 
+    GeoJSONTile(const OverscaledTileID& overscaledTileID,
+                std::string sourceID_,
+                const TileParameters& parameters);
+  
     void updateData(mapbox::geometry::feature_collection<int16_t>);
 
     void setNecessity(Necessity) final;

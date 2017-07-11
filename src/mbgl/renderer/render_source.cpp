@@ -1,5 +1,6 @@
 #include <mbgl/renderer/render_source.hpp>
 #include <mbgl/renderer/render_source_observer.hpp>
+#include <mbgl/renderer/sources/render_computed_source.hpp>
 #include <mbgl/renderer/sources/render_geojson_source.hpp>
 #include <mbgl/renderer/sources/render_raster_source.hpp>
 #include <mbgl/renderer/sources/render_vector_source.hpp>
@@ -27,6 +28,8 @@ std::unique_ptr<RenderSource> RenderSource::create(Immutable<Source::Impl> impl)
         return std::make_unique<RenderAnnotationSource>(staticImmutableCast<AnnotationSource::Impl>(impl));
     case SourceType::Image:
         return std::make_unique<RenderImageSource>(staticImmutableCast<ImageSource::Impl>(impl));
+    case SourceType::Computed:
+        return std::make_unique<RenderComputedSource>(staticImmutableCast<CustomVectorSource::Impl>(impl));
     }
 
     // Not reachable, but placate GCC.
