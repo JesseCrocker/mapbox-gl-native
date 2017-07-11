@@ -14,8 +14,11 @@ public:
          GeoJSONOptions options,
          FetchTileFunction fetchTile);
     ~Impl() final;
-
+  
     void reload();
+    bool needsReload() const;
+    void setReloaded();
+
 //    void reloadTile(const CanonicalTileID& tileID);
 //    void reloadRegion(mbgl::LatLngBounds bounds, uint8_t z);
     Range<uint8_t> getZoomRange() const;
@@ -24,7 +27,6 @@ public:
     FetchTileFunction fetchTile;
     GeoJSONOptions options;
   
-    bool needsReload() const;
 
 private:
     bool reloadRequested;

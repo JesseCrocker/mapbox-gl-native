@@ -31,8 +31,7 @@ void CustomVectorSource::reloadTile(const CanonicalTileID& tileId) {
 */
  
 void CustomVectorSource::reload() {
-    auto t = impl();
-    t.reload();
+    const_cast<CustomVectorSource::Impl&>(impl()).reload();
     observer->onSourceChanged(*this);
 }
   

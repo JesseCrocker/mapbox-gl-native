@@ -34,6 +34,10 @@ void CustomVectorSource::Impl::reload() {
     reloadRequested = true;
 }
 
+void CustomVectorSource::Impl::setReloaded() {
+    reloadRequested = false;
+}
+  
 bool CustomVectorSource::Impl::needsReload() const {
     return reloadRequested;
 }
