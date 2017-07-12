@@ -325,9 +325,9 @@ set(MBGL_CORE_FILES
     src/mbgl/storage/response.cpp
 
     # style
+    include/mbgl/style/filter.hpp
     include/mbgl/style/conversion.hpp
     include/mbgl/style/data_driven_property_value.hpp
-    include/mbgl/style/filter.hpp
     include/mbgl/style/filter_evaluator.hpp
     include/mbgl/style/image.hpp
     include/mbgl/style/layer.hpp
@@ -500,6 +500,7 @@ set(MBGL_CORE_FILES
     src/mbgl/text/shaping.hpp
 
     # tile
+    include/mbgl/tile/tile_id.hpp
     src/mbgl/tile/geojson_tile.cpp
     src/mbgl/tile/geojson_tile.hpp
     src/mbgl/tile/geometry_tile.cpp
@@ -516,7 +517,6 @@ set(MBGL_CORE_FILES
     src/mbgl/tile/tile.hpp
     src/mbgl/tile/tile_cache.cpp
     src/mbgl/tile/tile_cache.hpp
-    include/mbgl/tile/tile_id.hpp
     src/mbgl/tile/tile_id_hash.hpp
     src/mbgl/tile/tile_id_io.cpp
     src/mbgl/tile/tile_loader.hpp
@@ -616,8 +616,8 @@ set(MBGL_CORE_FILES
     src/mbgl/util/stopwatch.cpp
     src/mbgl/util/stopwatch.hpp
     src/mbgl/util/string.cpp
-    src/mbgl/util/thread_local.hpp
     src/mbgl/util/thread.hpp
+    src/mbgl/util/thread_local.hpp
     src/mbgl/util/throttler.cpp
     src/mbgl/util/throttler.hpp
     src/mbgl/util/tile_coordinate.hpp

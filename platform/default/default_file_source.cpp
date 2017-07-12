@@ -11,6 +11,8 @@
 #include <mbgl/util/url.hpp>
 #include <mbgl/util/thread.hpp>
 #include <mbgl/util/work_request.hpp>
+#include <mbgl/util/logging.hpp>
+
 
 #include <cassert>
 
@@ -164,11 +166,12 @@ public:
 
             // Get from the online file source
             if (resource.necessity == Resource::Required) {
+
                 tasks[req] = onlineFileSource.request(revalidation, [=] (Response onlineResponse) mutable {
+                    callback(onlineResponse);
                     // save the tile data to the database on the non priority thread
                     global_ptr->impl->actor().invoke(&Impl::put, revalidation, onlineResponse);
                     //this->offlineDatabase.put(revalidation, onlineResponse);
-                    callback(onlineResponse);
                 });
             }
         }
@@ -260,7 +263,7 @@ std::string DefaultFileSource::getAccessToken() {
 }
 
 void DefaultFileSource::setResourceTransform(optional<ActorRef<ResourceTransform>>&& transform) {
-    impl->actor().invoke(&Impl::setResourceTransform, std::move(transform));
+    impl->actor().invoke(&Impl::setResourceTransform, transform);
     priorityImpl->actor().invoke(&Impl::setResourceTransform, std::move(transform));
 }
 
