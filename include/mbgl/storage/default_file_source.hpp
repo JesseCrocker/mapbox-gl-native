@@ -144,7 +144,9 @@ public:
      */
     void setMaximumCacheSize(uint64_t) const;
   
-    optional<Response> fetchTile(int x, int y, int z, int pixel_ratio, const std::string& urlTemplate);
+    void fetchTile(int x, int y, int z, int pixel_ratio,
+                   const std::string& urlTemplate,
+                   std::function<void(optional<Response>)> callback);
 
     // For testing only.
     void put(const Resource&, const Response&);

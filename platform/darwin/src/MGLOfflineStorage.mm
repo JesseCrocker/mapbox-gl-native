@@ -385,11 +385,17 @@ NSString * const MGLOfflinePackMaximumCountUserInfoKey = MGLOfflinePackUserInfoK
 
 
 - (NSData* _Nullable) fetchTile:(MGLTileID) tileId pixelRatio:(int) pixelRatio template:(NSString*) templateURL {
-  mbgl::optional<mbgl::Response> response = _mbglFileSource->fetchTile(tileId.x, tileId.y, tileId.z, pixelRatio, std::string([templateURL UTF8String]));
-  if (response && !response->noContent) {
-    return  [NSData dataWithBytes:response->data->c_str() length:response->data->length()];
-  }
-  return nil;
+  __block NSData *responseData;
+  dispatch_semaphore_t sem = dispatch_semaphore_create(0);
+  _mbglFileSource->fetchTile(tileId.x, tileId.y, tileId.z, pixelRatio, std::string([templateURL UTF8String]),
+                             ^void(mbgl::optional<mbgl::Response> response) {
+                               if (response && !response->noContent) {
+                                 responseData = [NSData dataWithBytes:response->data->c_str() length:response->data->length()];
+                               }
+                               dispatch_semaphore_signal(sem);
+                             });
+  dispatch_semaphore_wait(sem, DISPATCH_TIME_FOREVER);
+  return responseData;
 }
 
 #pragma mark -
