@@ -634,7 +634,6 @@ optional<int64_t> OfflineDatabase::hasRegionResource(int64_t regionID, const Res
 }
 
 uint64_t OfflineDatabase::putRegionResource(int64_t regionID, const Resource& resource, const Response& response) {
-    return 0;
     uint64_t size = putInternal(resource, response, false).second;
     bool previouslyUnused = markUsed(regionID, resource);
 
