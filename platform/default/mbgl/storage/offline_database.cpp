@@ -623,6 +623,7 @@ optional<std::pair<Response, uint64_t>> OfflineDatabase::getRegionResource(int64
     return response;
 }
 
+
 optional<int64_t> OfflineDatabase::hasRegionResource(int64_t regionID, const Resource& resource) {
     auto response = hasInternal(resource);
 
@@ -634,17 +635,178 @@ optional<int64_t> OfflineDatabase::hasRegionResource(int64_t regionID, const Res
 }
 
 uint64_t OfflineDatabase::putRegionResource(int64_t regionID, const Resource& resource, const Response& response) {
-    uint64_t size = putInternal(resource, response, false).second;
-    bool previouslyUnused = markUsed(regionID, resource);
-
-    if (offlineMapboxTileCount
-        && resource.kind == Resource::Kind::Tile
-        && util::mapbox::isMapboxURL(resource.url)
-        && previouslyUnused) {
-        *offlineMapboxTileCount += 1;
+    if (response.error) {
+      return 0;
     }
+  
+    uint64_t size = 0;
 
-    return size;
+    if (resource.kind == Resource::Kind::Tile) {
+
+        region_tile rtile = region_tile();
+        if (response.data) {
+            std::string compressedData = util::compress(*response.data);
+            rtile.compressed = compressedData.size() < response.data->size();
+            size = rtile.compressed ? compressedData.size() : response.data->size();
+            rtile.data = rtile.compressed ? compressedData : *response.data;
+        }
+        rtile.urlTemplate = resource.tileData->urlTemplate;
+        rtile.pixelRatio = resource.tileData->pixelRatio;
+        rtile.x = resource.tileData->x;
+        rtile.y = resource.tileData->y;
+        rtile.z = resource.tileData->z;
+        rtile.regionID = regionID;
+        rtile.expires = response.expires.value_or(util::now() + Seconds(1209600));
+        rtile.etag = response.etag.value_or(nullptr);
+        rtile.modified = response.modified.value_or(util::now());
+        rtile.noContent = response.noContent;
+    
+        pending_tiles.push_back(rtile);
+        if (pending_tiles.size() > 10) {
+            savePendingTiles();
+        }
+        return size;
+    } else {
+    
+        size = putInternal(resource, response, false).second;
+        markUsed(regionID, resource);
+        
+        return size;
+    }
+}
+    
+void OfflineDatabase::savePendingTiles() {
+    // Begin an immediate-mode transaction to ensure that two writers do not attempt
+    // to INSERT a resource at the same moment.
+    mapbox::sqlite::Transaction transaction(*db, mapbox::sqlite::Transaction::Immediate);
+    
+    int newMapboxTiles = 0;
+
+    for (int i = 0; i < (int) pending_tiles.size(); i++) {
+        region_tile rtile = pending_tiles[i];
+        bool isMapBoxTile = !util::mapbox::isMapboxURL(rtile.urlTemplate);
+        bool isNewRegionTile = false; // tile is not in any other region currently
+        int64_t tile_id = 0;
+        Statement getrow = getStatement(
+                                        "SELECT id "
+                                        "FROM tiles "
+                                        "WHERE url_template = ?1 "
+                                        "  AND pixel_ratio  = ?2 "
+                                        "  AND x            = ?3 "
+                                        "  AND y            = ?4 "
+                                        "  AND z            = ?5 ");
+        
+        getrow->bind(1, rtile.urlTemplate);
+        getrow->bind(2, rtile.pixelRatio);
+        getrow->bind(3, rtile.x);
+        getrow->bind(4, rtile.y);
+        getrow->bind(5, rtile.z);
+        
+        if (getrow->run()) {
+            // row already existed. This should almost never happen, tile would have to have been loading
+            // when the download started for it
+            tile_id = getrow->get<int64_t>(0);
+    
+            Statement update = getStatement(
+                                          "UPDATE tiles "
+                                          "SET modified       = ?1, "
+                                          "    etag           = ?2, "
+                                          "    expires        = ?3, "
+                                          "    accessed       = ?4, "
+                                          "    data           = ?5, "
+                                          "    compressed     = ?6 "
+                                          "WHERE id = ?7 ");
+            // clang-format on
+
+            update->bind(1, rtile.modified);
+            update->bind(2, rtile.etag);
+            update->bind(3, rtile.expires);
+            update->bind(4, util::now());
+            update->bind(7, tile_id);
+
+            if (rtile.noContent) {
+                update->bind(5, nullptr);
+                update->bind(6, false);
+            } else {
+                update->bindBlob(5, rtile.data.data(), rtile.data.size(), false);
+                update->bind(6, rtile.compressed);
+            }
+
+            update->run();
+            if (update->changes() != 0) {
+            }
+            
+            if (isMapBoxTile) {
+                // if mapbox tile, check if already in a region so as not to update mapboxtile count
+                Statement checkRegionMembership = getStatement(
+                                                   "SELECT region_id "
+                                                   "FROM region_tiles "
+                                                   "WHERE region_id   != ?1 "
+                                                    "  AND tile_id = ?2 ");
+                checkRegionMembership->bind(1, rtile.regionID);
+                checkRegionMembership->bind(2, tile_id);
+                if (!checkRegionMembership->run()) {
+                    isNewRegionTile = true;
+                }
+             }
+            
+        } else {
+            // clang-format off
+            Statement insert = getStatement(
+                                            "INSERT INTO tiles (url_template, pixel_ratio, x,  y,  z,  modified,  etag,  expires,  accessed,  data, compressed) "
+                                            "VALUES            (?1,           ?2,          ?3, ?4, ?5, ?6,        ?7,    ?8,       ?9,        ?10,  ?11) ");
+            // clang-format on
+            
+            insert->bind(1, rtile.urlTemplate);
+            insert->bind(2, rtile.pixelRatio);
+            insert->bind(3, rtile.x);
+            insert->bind(4, rtile.y);
+            insert->bind(5, rtile.z);
+            insert->bind(6, rtile.modified);
+            insert->bind(7, rtile.etag);
+            insert->bind(8, rtile.expires);
+            insert->bind(9, util::now());
+            
+            if (rtile.noContent) {
+                insert->bind(10, nullptr);
+                insert->bind(11, false);
+            } else {
+                insert->bindBlob(10, rtile.data.data(), rtile.data.size(), false);
+                insert->bind(11, rtile.compressed);
+            }
+            
+            insert->run();
+            
+            Statement lastRowId = getStatement("SELECT last_insert_rowid()");
+            if (lastRowId->run()) {
+                tile_id = lastRowId->get<int64_t>(0);
+            }
+            isNewRegionTile = true;
+
+        }
+        
+        Statement insert = getStatement(
+                                        "INSERT OR IGNORE INTO region_tiles (region_id, tile_id) "
+                                        "VALUES                             (?1,        ?2 )");
+
+        insert->bind(1, rtile.regionID);
+        insert->bind(2, tile_id);
+        insert->run();
+        if (insert->changes() == 0) {
+            isNewRegionTile = false;
+        }
+        
+        if (isMapBoxTile && isNewRegionTile) {
+            newMapboxTiles++;
+        }
+
+    }
+    
+    transaction.commit();
+    if (offlineMapboxTileCount) {
+        *offlineMapboxTileCount += newMapboxTiles;
+    }
+    pending_tiles.clear();
 }
 
 bool OfflineDatabase::markUsed(int64_t regionID, const Resource& resource) {
