@@ -656,9 +656,14 @@ public:
     MGLAssertIsMainThread();
 
     MGLReachability *reachability = [notification object];
-    if ( ! _isWaitingForRedundantReachableNotification && [reachability isReachable])
+    if ( ! _isWaitingForRedundantReachableNotification)
     {
-        mbgl::NetworkStatus::Reachable();
+      if ([reachability isReachable]) {
+          mbgl::NetworkStatus::Set(mbgl::NetworkStatus::Status::Online);
+          mbgl::NetworkStatus::Reachable();
+      } else {
+          mbgl::NetworkStatus::Set(mbgl::NetworkStatus::Status::Offline);
+      }
     }
     _isWaitingForRedundantReachableNotification = NO;
 }

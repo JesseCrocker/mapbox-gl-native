@@ -201,6 +201,7 @@ std::pair<bool, uint64_t> OfflineDatabase::putInternal(const Resource& resource,
 }
 
 optional<std::pair<Response, uint64_t>> OfflineDatabase::getResource(const Resource& resource) {
+    /*
     // clang-format off
     Statement accessedStmt = getStatement(
         "UPDATE resources SET accessed = ?1 WHERE url = ?2");
@@ -209,7 +210,9 @@ optional<std::pair<Response, uint64_t>> OfflineDatabase::getResource(const Resou
     accessedStmt->bind(1, util::now());
     accessedStmt->bind(2, resource.url);
     accessedStmt->run();
-
+    
+     */
+  
     // clang-format off
     Statement stmt = getStatement(
         //        0      1        2       3        4
@@ -223,6 +226,7 @@ optional<std::pair<Response, uint64_t>> OfflineDatabase::getResource(const Resou
     if (!stmt->run()) {
         return {};
     }
+    
 
     Response response;
     uint64_t size = 0;
@@ -263,6 +267,7 @@ bool OfflineDatabase::putResource(const Resource& resource,
                                   const std::string& data,
                                   bool compressed) {
     if (response.notModified) {
+        /*
         // clang-format off
         Statement update = getStatement(
             "UPDATE resources "
@@ -275,6 +280,7 @@ bool OfflineDatabase::putResource(const Resource& resource,
         update->bind(2, response.expires);
         update->bind(3, resource.url);
         update->run();
+         */
         return false;
     }
 
@@ -438,7 +444,13 @@ bool OfflineDatabase::putTile(const Resource::TileData& tile,
                               const Response& response,
                               const std::string& data,
                               bool compressed) {
+    auto expires = response.expires;
+    if (!bool(expires)) {
+      expires = util::now() + Seconds(1209600);
+    }
+  
     if (response.notModified) {
+        /*
         // clang-format off
         Statement update = getStatement(
             "UPDATE tiles "
@@ -452,13 +464,14 @@ bool OfflineDatabase::putTile(const Resource::TileData& tile,
         // clang-format on
 
         update->bind(1, util::now());
-        update->bind(2, response.expires);
+        update->bind(2, expires);
         update->bind(3, tile.urlTemplate);
         update->bind(4, tile.pixelRatio);
         update->bind(5, tile.x);
         update->bind(6, tile.y);
         update->bind(7, tile.z);
         update->run();
+         */
         return false;
     }
 
@@ -486,7 +499,7 @@ bool OfflineDatabase::putTile(const Resource::TileData& tile,
 
     update->bind(1, response.modified);
     update->bind(2, response.etag);
-    update->bind(3, response.expires);
+    update->bind(3, expires);
     update->bind(4, util::now());
     update->bind(7, tile.urlTemplate);
     update->bind(8, tile.pixelRatio);
@@ -521,7 +534,7 @@ bool OfflineDatabase::putTile(const Resource::TileData& tile,
     insert->bind(5, tile.z);
     insert->bind(6, response.modified);
     insert->bind(7, response.etag);
-    insert->bind(8, response.expires);
+    insert->bind(8, expires);
     insert->bind(9, util::now());
 
     if (response.noContent) {
@@ -621,6 +634,7 @@ optional<int64_t> OfflineDatabase::hasRegionResource(int64_t regionID, const Res
 }
 
 uint64_t OfflineDatabase::putRegionResource(int64_t regionID, const Resource& resource, const Response& response) {
+    return 0;
     uint64_t size = putInternal(resource, response, false).second;
     bool previouslyUnused = markUsed(regionID, resource);
 
@@ -660,7 +674,12 @@ bool OfflineDatabase::markUsed(int64_t regionID, const Resource& resource) {
         if (insert->changes() == 0) {
             return false;
         }
-
+      
+        // only check if used if it a mapbox tile, otherwise it doesn't matter.
+        if (!util::mapbox::isMapboxURL(resource.url)) {
+          return false;
+        }
+      
         // clang-format off
         Statement select = getStatement(
             "SELECT region_id "

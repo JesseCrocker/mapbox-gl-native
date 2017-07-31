@@ -83,8 +83,9 @@ public:
         @autoreleasepool {
             NSURLSessionConfiguration* sessionConfig =
                 [NSURLSessionConfiguration defaultSessionConfiguration];
-            sessionConfig.timeoutIntervalForResource = 30;
-            sessionConfig.HTTPMaximumConnectionsPerHost = 8;
+            //sessionConfig.timeoutIntervalForResource = 30;
+            sessionConfig.timeoutIntervalForRequest = 360;
+            sessionConfig.HTTPMaximumConnectionsPerHost = 30;
             sessionConfig.requestCachePolicy = NSURLRequestReloadIgnoringLocalCacheData;
             sessionConfig.URLCache = nil;
 
@@ -193,7 +194,7 @@ HTTPFileSource::HTTPFileSource()
 HTTPFileSource::~HTTPFileSource() = default;
 
 uint32_t HTTPFileSource::maximumConcurrentRequests() {
-    return 20;
+    return 30;
 }
 
 std::unique_ptr<AsyncRequest> HTTPFileSource::request(const Resource& resource, Callback callback) {
