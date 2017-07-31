@@ -336,7 +336,6 @@ void OfflineDownload::ensureResource(const Resource& resource,
 
             status.completedResourceCount++;
             uint64_t resourceSize = offlineDatabase.putRegionResource(id, resource, onlineResponse);
-            resourceSize = onlineResponse.data->size();
             status.completedResourceSize += resourceSize;
             if (resource.kind == Resource::Kind::Tile) {
                 status.completedTileCount += 1;
