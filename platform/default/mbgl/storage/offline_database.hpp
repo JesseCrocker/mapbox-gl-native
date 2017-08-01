@@ -124,7 +124,7 @@ private:
     struct region_tile {
       Timestamp expires;
       Timestamp modified;
-      std::string etag;
+      optional<std::string> etag;
       std::string data;
       std::string urlTemplate;
       uint8_t pixelRatio;

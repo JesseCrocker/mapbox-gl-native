@@ -657,7 +657,7 @@ uint64_t OfflineDatabase::putRegionResource(int64_t regionID, const Resource& re
         rtile.z = resource.tileData->z;
         rtile.regionID = regionID;
         rtile.expires = response.expires.value_or(util::now() + Seconds(1209600));
-        rtile.etag = response.etag.value_or(nullptr);
+        rtile.etag = response.etag;
         rtile.modified = response.modified.value_or(util::now());
         rtile.noContent = response.noContent;
     
