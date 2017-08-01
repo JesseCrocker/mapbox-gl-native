@@ -662,7 +662,7 @@ uint64_t OfflineDatabase::putRegionResource(int64_t regionID, const Resource& re
         rtile.noContent = response.noContent;
     
         pending_tiles.push_back(rtile);
-        if (pending_tiles.size() > 10) {
+        if (pending_tiles.size() > 100) {
             savePendingTiles();
         }
         return size;
