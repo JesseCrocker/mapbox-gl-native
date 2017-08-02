@@ -120,6 +120,7 @@ private:
     bool checkEvict(uint64_t neededFreeSize);
     bool evict(uint64_t neededFreeSize);
     bool evict();
+    void vacuum();
   
     struct region_tile {
       Timestamp expires;

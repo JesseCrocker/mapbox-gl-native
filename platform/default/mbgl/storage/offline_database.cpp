@@ -607,7 +607,7 @@ void OfflineDatabase::deleteRegion(OfflineRegion&& region) {
     stmt->run();
 
     evict();
-    db->exec("PRAGMA incremental_vacuum");
+    vacuum();
 
     // Ensure that the cached offlineTileCount value is recalculated.
     offlineMapboxTileCount = {};
@@ -998,7 +998,7 @@ bool OfflineDatabase::evict() {
   
   // estimate avg tile size, this will be high because it includes resource and metadata
   // size averaged in, but that is okay because we remove resources to the same degree as tiles
-  double avgTileSize = usedSize() / totalTileCount;
+  double avgTileSize = usedSize() / (double) totalTileCount;
   
   // clang-format off
   Statement tileSizeStmt = getStatement(
@@ -1102,6 +1102,23 @@ bool OfflineDatabase::offlineMapboxTileCountLimitExceeded() {
     return getOfflineMapboxTileCount() >= offlineMapboxTileCountLimit;
 }
 
+void OfflineDatabase::vacuum() {
+  uint64_t pageSize = getPragma<int64_t>("PRAGMA page_size");
+  uint64_t pageCount = getPragma<int64_t>("PRAGMA page_count");
+  
+  auto usedSize = [&] {
+    return pageSize * (pageCount - getPragma<int64_t>("PRAGMA freelist_count"));
+  };
+  
+  double usedRatio = usedSize() / (double) (pageSize * pageCount);
+  
+  if (usedRatio < 0.2) {
+    db->exec("VACUUM");
+  } else {
+    db->exec("PRAGMA incremental_vacuum(10000)");
+  }
+}
+  
 uint64_t OfflineDatabase::getOfflineMapboxTileCount() {
     // Calculating this on every call would be much simpler than caching and
     // manually updating the value, but it would make offline downloads an O(n²)
@@ -1131,7 +1148,7 @@ uint64_t OfflineDatabase::getOfflineMapboxTileCount() {
     maximumCacheSize = cacheSize;
     if (runEviction) {
       evict(0);
-      db->exec("PRAGMA incremental_vacuum");
+      vacuum();
     }
   }
   
