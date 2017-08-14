@@ -151,6 +151,10 @@ private:
 }
 
 - (void)offlineRegionStatusDidChange:(mbgl::OfflineRegionStatus)status {
+    if (_state == MGLOfflinePackStateInvalid) {
+      return;
+    }
+  
     NSAssert(_state != MGLOfflinePackStateInvalid, @"Cannot change update progress of an invalid offline pack.");
 
     switch (status.downloadState) {
@@ -227,8 +231,10 @@ NSError *MGLErrorFromResponseError(mbgl::Response::Error error) {
 @end
 
 void MBGLOfflineRegionObserver::statusChanged(mbgl::OfflineRegionStatus status) {
+    MGLOfflinePack * strongPack = pack;
+
     dispatch_async(dispatch_get_main_queue(), ^{
-        [pack offlineRegionStatusDidChange:status];
+        [strongPack offlineRegionStatusDidChange:status];
     });
 }
 
