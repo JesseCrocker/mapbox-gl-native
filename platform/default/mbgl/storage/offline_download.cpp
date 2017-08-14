@@ -270,6 +270,7 @@ void OfflineDownload::deactivateDownload() {
     requiredSourceURLs.clear();
     resourcesRemaining.clear();
     requests.clear();
+    offlineDatabase.savePendingTiles();
 }
 
 void OfflineDownload::queueResource(Resource resource) {

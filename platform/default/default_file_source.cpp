@@ -160,10 +160,16 @@ public:
                     revalidation.priorExpires = offlineResponse->expires;
                     revalidation.priorEtag = offlineResponse->etag;
                     callback(*offlineResponse);
-                }
 
+                }
             }
 
+            auto now = util::now();
+            
+            if (bool(revalidation.priorExpires) && *revalidation.priorExpires > now) {
+              return;
+            }
+          
             // Get from the online file source
             if (resource.necessity == Resource::Required) {
 

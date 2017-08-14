@@ -59,6 +59,7 @@ public:
 
     void setMaximumCacheSize(uint64_t);
     uint64_t getMaximumCacheSize();
+    void savePendingTiles();
 
 private:
     void connect(int flags);
@@ -119,6 +120,25 @@ private:
     bool checkEvict(uint64_t neededFreeSize);
     bool evict(uint64_t neededFreeSize);
     bool evict();
+    void vacuum();
+  
+    struct region_tile {
+      Timestamp expires;
+      Timestamp modified;
+      optional<std::string> etag;
+      std::string data;
+      std::string urlTemplate;
+      uint8_t pixelRatio;
+      int32_t x;
+      int32_t y;
+      int8_t z;
+      int64_t regionID;
+      bool compressed;
+      bool noContent;
+    };
+  
+    std::vector<region_tile> pending_tiles;
+
 
 };
 
