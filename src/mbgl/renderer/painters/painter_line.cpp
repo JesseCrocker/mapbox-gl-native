@@ -20,6 +20,10 @@ void Painter::renderLine(PaintParameters& parameters,
     if (pass == RenderPass::Opaque) {
         return;
     }
+  
+    if (!&layer) {
+      return;
+    }
 
     const RenderLinePaintProperties::PossiblyEvaluated& properties = layer.evaluated;
 

@@ -19,6 +19,10 @@ void Painter::renderFill(PaintParameters& parameters,
                          const RenderTile& tile) {
     const FillPaintProperties::PossiblyEvaluated& properties = layer.evaluated;
 
+    if (!&layer) {
+      return;
+    }
+
     if (!properties.get<FillPattern>().from.empty()) {
         if (pass != RenderPass::Translucent) {
             return;
