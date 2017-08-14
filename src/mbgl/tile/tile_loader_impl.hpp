@@ -96,7 +96,9 @@ void TileLoader<T>::makeOptional() {
 template <typename T>
 void TileLoader<T>::loadedData(const Response& res) {
     if (res.error && res.error->reason != Response::Error::Reason::NotFound) {
-        tile.setError(std::make_exception_ptr(std::runtime_error(res.error->message)));
+        if (!(tile.isComplete() && tile.isRenderable())) {
+          tile.setError(std::make_exception_ptr(std::runtime_error(res.error->message)));
+        }
     } else if (res.notModified) {
         resource.priorExpires = res.expires;
         // Do not notify the tile; when we get this message, it already has the current

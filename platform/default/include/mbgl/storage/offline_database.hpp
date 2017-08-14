@@ -76,6 +76,8 @@ public:
     uint64_t getOfflineMapboxTileCount();
     bool exceedsOfflineMapboxTileCountLimit(const Resource&);
     void setMaximumCacheSize(uint64_t cacheSize);
+    uint64_t getMaximumCacheSize();
+
 
 private:
     void initialize();
@@ -130,6 +132,7 @@ private:
     bool evict(uint64_t neededFreeSize);
     void vacuum();
     bool evict();
+
 };
 
 } // namespace mbgl

@@ -448,7 +448,7 @@ void OnlineFileRequest::completed(Response response) {
         failedRequestReason = Response::Error::Reason::Success;
     }
 
-    schedule(response.expires);
+    //schedule(response.expires);
 
     // Calling the callback may result in `this` being deleted. It needs to be done last,
     // and needs to make a local copy of the callback to ensure that it remains valid for
