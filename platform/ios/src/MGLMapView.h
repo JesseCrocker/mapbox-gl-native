@@ -290,6 +290,11 @@ IB_DESIGNABLE
  */
 - (void)removeStyleClass:(NSString *)styleClass __attribute__((deprecated("This method is non-functional.")));
 
+/**
+ Dont allow resources to be fetched over a network connection.
+ */
+@property (nonatomic, assign) bool disableNetworkAccess;
+
 #pragma mark Displaying the User’s Location
 
 /**
