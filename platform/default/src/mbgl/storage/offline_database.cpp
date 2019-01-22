@@ -750,7 +750,7 @@ std::exception_ptr OfflineDatabase::deleteRegion(OfflineRegion&& region) try {
 
     evict(0);
     assert(db);
-    db->exec("PRAGMA incremental_vacuum");
+    vacuum();
 
     // Ensure that the cached offlineTileCount value is recalculated.
     offlineMapboxTileCount = {};
@@ -1136,4 +1136,31 @@ bool OfflineDatabase::exceedsOfflineMapboxTileCountLimit(const Resource& resourc
         && offlineMapboxTileCountLimitExceeded();
 }
 
+void OfflineDatabase::setMaximumCacheSize(uint64_t cacheSize) {
+    bool runEviction = cacheSize < maximumCacheSize;
+    maximumCacheSize = cacheSize;
+    if (runEviction) {
+        evict(0);
+        vacuum();
+    }
+}
+
+    
+void OfflineDatabase::vacuum() {
+    uint64_t pageSize = getPragma<int64_t>("PRAGMA page_size");
+    uint64_t pageCount = getPragma<int64_t>("PRAGMA page_count");
+    
+    auto usedSize = [&] {
+        return pageSize * (pageCount - getPragma<int64_t>("PRAGMA freelist_count"));
+    };
+    
+    double usedRatio = usedSize() / (double) (pageSize * pageCount);
+    
+    if (usedRatio < 0.2) {
+        db->exec("VACUUM");
+    } else {
+        db->exec("PRAGMA incremental_vacuum(10000)");
+    }
+}
+    
 } // namespace mbgl

@@ -79,6 +79,7 @@ public:
     bool offlineMapboxTileCountLimitExceeded();
     uint64_t getOfflineMapboxTileCount();
     bool exceedsOfflineMapboxTileCountLimit(const Resource&);
+    void setMaximumCacheSize(uint64_t cacheSize);
 
 private:
     void initialize();
@@ -129,6 +130,7 @@ private:
     optional<uint64_t> offlineMapboxTileCount;
 
     bool evict(uint64_t neededFreeSize);
+    void vacuum();
 };
 
 } // namespace mbgl
