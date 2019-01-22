@@ -342,6 +342,11 @@ MGL_EXPORT
 - (void)setMaximumAllowedMapboxTiles:(uint64_t)maximumCount;
 
 /**
+ Sets the maximum size in bytes to be used for the ambient caching of tiles.
+ */
+- (void)setMaximumCacheSize:(uint64_t)cacheSize;
+
+/**
  The cumulative size, measured in bytes, of all downloaded resources on disk.
 
  The returned value includes all resources, including tiles, whether downloaded
