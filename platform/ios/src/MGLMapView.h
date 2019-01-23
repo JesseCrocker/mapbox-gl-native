@@ -1806,6 +1806,12 @@ MGL_EXPORT IB_DESIGNABLE
 
 - (void)emptyMemoryCache __attribute__((unavailable));
 
+/**
+ Dont allow resources to be fetched over a network connection.
+ */
+@property (nonatomic, assign) bool disableNetworkAccess;
+
+
 @end
 
 NS_ASSUME_NONNULL_END
