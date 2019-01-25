@@ -69,7 +69,6 @@
         _bounds = bounds;
         _minimumZoomLevel = minimumZoomLevel;
         _maximumZoomLevel = maximumZoomLevel;
-        _tileList = nil;
     }
     return self;
 }
@@ -80,37 +79,16 @@
     return [self initWithStyleURL:styleURL bounds:bounds fromZoomLevel:definition.minZoom toZoomLevel:definition.maxZoom];
 }
 
-- (instancetype)initWithStyleURL:(NSURL *)styleURL bounds:(MGLCoordinateBounds)bounds fromZoomLevel:(double)minimumZoomLevel toZoomLevel:(double)maximumZoomLevel tileList:(nullable NSArray*)tileList  {
-    if (self = [self initWithStyleURL:styleURL bounds:bounds fromZoomLevel:minimumZoomLevel toZoomLevel:maximumZoomLevel]) {
-        _tileList = tileList;
-    }
-    return self;
-}
-
 - (const mbgl::OfflineRegionDefinition)offlineRegionDefinition {
 #if TARGET_OS_IPHONE || TARGET_OS_SIMULATOR
     const float scaleFactor = [UIScreen instancesRespondToSelector:@selector(nativeScale)] ? [[UIScreen mainScreen] nativeScale] : [[UIScreen mainScreen] scale];
 #elif TARGET_OS_MAC
     const float scaleFactor = [NSScreen mainScreen].backingScaleFactor;
 #endif
-    if(_tileList) {
-        std::vector<mbgl::CanonicalTileID> tileVector;
-        tileVector.reserve(_tileList.count);
-        for (NSNumber* value in _tileList) {
-            MGLTileID tileId = MGLTileIDFromKey([value unsignedLongLongValue]);
-            mbgl::CanonicalTileID canonicalTileID = mbgl::CanonicalTileID(tileId.z, tileId.x,tileId.y);
-            tileVector.push_back(canonicalTileID);
-        }
-        return mbgl::OfflineTileListRegionDefinition(_styleURL.absoluteString.UTF8String,
-                                                        MGLLatLngBoundsFromCoordinateBounds(_bounds),
-                                                        _minimumZoomLevel, _maximumZoomLevel,
-                                                        scaleFactor, tileVector);
-    } else {
-        return mbgl::OfflineTilePyramidRegionDefinition(_styleURL.absoluteString.UTF8String,
-                                                        MGLLatLngBoundsFromCoordinateBounds(_bounds),
-                                                        _minimumZoomLevel, _maximumZoomLevel,
-                                                        scaleFactor);
-    }
+    return mbgl::OfflineTilePyramidRegionDefinition(_styleURL.absoluteString.UTF8String,
+                                                    MGLLatLngBoundsFromCoordinateBounds(_bounds),
+                                                    _minimumZoomLevel, _maximumZoomLevel,
+                                                    scaleFactor);
 }
 
 - (nullable instancetype)initWithCoder:(NSCoder *)coder {
