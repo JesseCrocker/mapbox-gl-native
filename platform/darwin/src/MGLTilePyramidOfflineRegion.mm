@@ -9,8 +9,6 @@
 #import "MGLGeometry_Private.h"
 #import "MGLStyle.h"
 #import "MGLLoggingConfiguration_Private.h"
-#import "MGLTileID.h"
-#include <mbgl/tile/tile_id.hpp>
 
 #if TARGET_OS_IPHONE || TARGET_OS_SIMULATOR
 #import "MMEConstants.h"
