@@ -58,9 +58,11 @@ void tileCover(const OfflineRegionDefinition& definition, style::SourceType type
         definition.match(
                 [&](const OfflineTilePyramidRegionDefinition& reg){ tileCover(reg.bounds, z, fn); },
                 [&](const OfflineGeometryRegionDefinition& reg){ tileCover(reg.geometry, z, fn); },
-                [&](const OfflineTileListRegionDefinition&){
+                [&](const OfflineTileListRegionDefinition& reg){
                     if(z == clampedZoomRange.min) {
-//                        fn = reg.tileList;
+                      for(CanonicalTileID t: reg.tileList) {
+                        fn(t);
+                      }
                     }
                 }
         );
