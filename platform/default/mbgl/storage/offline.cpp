@@ -160,7 +160,7 @@ std::string encodeOfflineRegionDefinition(const OfflineRegionDefinition& region)
                 bounds.PushBack(_region.bounds.east(), doc.GetAllocator());
                 doc.AddMember("bounds", bounds, doc.GetAllocator());
                 rapidjson::GenericValue<rapidjson::UTF8<>, rapidjson::CrtAllocator> tileList(rapidjson::kArrayType);
-                for ( auto &i : region.tileList ) {
+                for ( auto &i : _region.tileList ) {
                     uint64_t zoom = (uint64_t) i.z & 0xFFLL; // 8bits, 256 levels
                     uint64_t x = (uint64_t) i.x & 0xFFFFFFFLL;  // 28 bits
                     uint64_t y = (uint64_t) i.y & 0xFFFFFFFLL;  // 28 bits

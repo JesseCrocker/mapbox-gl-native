@@ -58,9 +58,9 @@ void tileCover(const OfflineRegionDefinition& definition, style::SourceType type
         definition.match(
                 [&](const OfflineTilePyramidRegionDefinition& reg){ tileCover(reg.bounds, z, fn); },
                 [&](const OfflineGeometryRegionDefinition& reg){ tileCover(reg.geometry, z, fn); },
-                [&](const OfflineTileListRegionDefinition& reg){
+                [&](const OfflineTileListRegionDefinition&){
                     if(z == clampedZoomRange.min) {
-                        fn = reg.tileList;
+//                        fn = reg.tileList;
                     }
                 }
         );
@@ -80,9 +80,9 @@ uint64_t tileCount(const OfflineRegionDefinition& definition, style::SourceType 
                 [&](const OfflineGeometryRegionDefinition& reg){ return util::tileCount(reg.geometry, z); },
                 [&](const OfflineTileListRegionDefinition& reg){
                     if(z == clampedZoomRange.min) {
-                        return reg.tileList.size();
+                        return (unsigned long)reg.tileList.size();
                     } else {
-                        return 0;
+                        return (unsigned long)0;
                     }
                 }
         );
