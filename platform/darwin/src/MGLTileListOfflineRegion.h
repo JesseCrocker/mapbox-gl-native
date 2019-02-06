@@ -44,7 +44,7 @@ MGL_EXPORT
 /**
  A specific list of tileIds to download for this region
  */
-@property (nonatomic, readonly, nullable) NSArray* tileList;
+@property (nonatomic, readonly, nullable) NSArray *tileList;
 
 - (instancetype)init NS_UNAVAILABLE;
 
@@ -74,9 +74,9 @@ MGL_EXPORT
     parameter is set to a value greater than the tile source’s minimum zoom
     level, the download covers zoom levels up to the tile source’s maximum zoom
     level.
- @params tileList list of tiles
+ @params tileList list of tiles keys as NSNumbers. See MGLTileID.h MGLTileIDMake MGLTileKey
  */
-- (instancetype)initWithStyleURL:(NSURL *)styleURL bounds:(MGLCoordinateBounds)bounds fromZoomLevel:(double)minimumZoomLevel toZoomLevel:(double)maximumZoomLevel tileList:(nullable NSArray*)tileList;
+- (instancetype)initWithStyleURL:(NSURL *)styleURL bounds:(MGLCoordinateBounds)bounds fromZoomLevel:(double)minimumZoomLevel toZoomLevel:(double)maximumZoomLevel tileList:(nullable NSArray <NSNumber *> *)tileList;
 
 @end
 

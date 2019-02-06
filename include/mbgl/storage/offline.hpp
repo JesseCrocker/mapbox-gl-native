@@ -64,7 +64,7 @@ public:
 };
 
 /*
- * An offline region defined by a style URL, list of tiles, and
+ * An offline region defined by a style URL, list of tile IDs, and
  * device pixel ratio.
  *
  * Both minZoom and maxZoom must be ≥ 0, and maxZoom must be ≥ minZoom.
