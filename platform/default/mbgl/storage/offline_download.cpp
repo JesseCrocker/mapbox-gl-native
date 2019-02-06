@@ -60,7 +60,7 @@ void tileCover(const OfflineRegionDefinition& definition, style::SourceType type
                 [&](const OfflineGeometryRegionDefinition& reg){ tileCover(reg.geometry, z, fn); },
                 [&](const OfflineTileListRegionDefinition& reg){
                     if(z == clampedZoomRange.min) {
-                      for(CanonicalTileID t: reg.tileList) {
+                      for(CanonicalTileID t : reg.tileList) {
                         fn(t);
                       }
                     }

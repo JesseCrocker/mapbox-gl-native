@@ -12,16 +12,15 @@ bool MGLTileIDsEqual(MGLTileID one, MGLTileID two) {
   return (one.x == two.x) && (one.y == two.y) && (one.z == two.z);
 }
 
-// Returns an MGLTileId from tile key
-MGLTileID MGLTileIDFromKey(uint64_t tilekey) {
+MGLTileID MGLTileIDFromKey(uint64_t tileKey) {
     MGLTileID t;
-    t.z = tilekey >> 56;
-    t.x = tilekey >> 28 & 0xFFFFFFFLL;
-    t.y = tilekey & 0xFFFFFFFLL;
+    t.z = tileKey >> 56;
+    t.x = tileKey >> 28 & 0xFFFFFFFLL;
+    t.y = tileKey & 0xFFFFFFFLL;
     return t;
 }
 
-/// Returns a unique key of the tile for use in the SQLite cache
+
 uint64_t MGLTileKey(MGLTileID tile) {
   uint64_t zoom = (uint64_t) tile.z & 0xFFLL; // 8bits, 256 levels
   uint64_t x = (uint64_t) tile.x & 0xFFFFFFFLL;  // 28 bits
@@ -33,7 +32,7 @@ uint64_t MGLTileKey(MGLTileID tile) {
 }
 
 
-MGLTileID MGLTileIDMake(uint32_t x, uint32_t y, uint8_t z) {
+MGLTileID MGLTileIDMake(uint8_t z, uint32_t x, uint32_t y) {
   MGLTileID t;
   t.x = x;
   t.y = y;

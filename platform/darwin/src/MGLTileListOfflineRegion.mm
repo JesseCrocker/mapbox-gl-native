@@ -26,7 +26,7 @@
 
 @synthesize styleURL = _styleURL;
 
--(NSDictionary *)offlineStartEventAttributes {
+- (NSDictionary *)offlineStartEventAttributes {
     return @{
              #if TARGET_OS_IPHONE || TARGET_OS_SIMULATOR
              MMEEventKeyShapeForOfflineRegion: @"tileregion",
@@ -44,12 +44,12 @@
 - (instancetype)init {
     MGLLogInfo(@"Calling this initializer is not allowed.");
     [NSException raise:NSGenericException format:
-     @"-[MGLTilePyramidOfflineRegion init] is unavailable. "
-     @"Use -initWithStyleURL:bounds:fromZoomLevel:toZoomLevel: instead."];
+     @"-[MGLTileListOfflineRegion init] is unavailable. "
+     @"Use -initWithStyleURL:bounds:fromZoomLevel:toZoomLevel:tileList: instead."];
     return nil;
 }
 
-- (instancetype)initWithStyleURL:(NSURL *)styleURL bounds:(MGLCoordinateBounds)bounds fromZoomLevel:(double)minimumZoomLevel toZoomLevel:(double)maximumZoomLevel tileList:(nullable NSArray*)tileList {
+- (instancetype)initWithStyleURL:(NSURL *)styleURL bounds:(MGLCoordinateBounds)bounds fromZoomLevel:(double)minimumZoomLevel toZoomLevel:(double)maximumZoomLevel tileList:(nullable NSArray <NSNumber *> *)tileList {
     MGLLogDebug(@"Initializing styleURL: %@ bounds: %@ fromZoomLevel: %f toZoomLevel: %f", styleURL, MGLStringFromCoordinateBounds(bounds), minimumZoomLevel, maximumZoomLevel);
     if (self = [super init]) {
         if (!styleURL) {
@@ -77,12 +77,12 @@
 - (instancetype)initWithOfflineRegionDefinition:(const mbgl::OfflineTileListRegionDefinition &)definition {
     NSURL *styleURL = [NSURL URLWithString:@(definition.styleURL.c_str())];
     MGLCoordinateBounds bounds = MGLCoordinateBoundsFromLatLngBounds(definition.bounds);
-    NSMutableArray *tileList = [NSMutableArray arrayWithCapacity:definition.tileList.size()];
-    for(mbgl::CanonicalTileID t: definition.tileList) {
-        NSNumber *tileIdNumber = @(MGLTileKey(MGLTileIDMake(t.x, t.y, t.z)));
-        [tileList addObject:tileIdNumber];
+    NSMutableArray *tileKeys = [NSMutableArray arrayWithCapacity:definition.tileList.size()];
+    for(mbgl::CanonicalTileID t : definition.tileList) {
+        NSNumber *tileKey = @(MGLTileKey(MGLTileIDMake(t.z, t.x, t.y)));
+        [tileKeys addObject:tileKey];
     }
-    return [self initWithStyleURL:styleURL bounds:bounds fromZoomLevel:definition.minZoom toZoomLevel:definition.maxZoom tileList:tileList];
+    return [self initWithStyleURL:styleURL bounds:bounds fromZoomLevel:definition.minZoom toZoomLevel:definition.maxZoom tileList:tileKeys];
 }
 
 - (const mbgl::OfflineRegionDefinition)offlineRegionDefinition {
@@ -93,9 +93,9 @@
 #endif
     std::vector<mbgl::CanonicalTileID> tileVector;
     tileVector.reserve(_tileList.count);
-    for (NSNumber* value in _tileList) {
+    for (NSNumber * value in _tileList) {
         MGLTileID tileId = MGLTileIDFromKey([value unsignedLongLongValue]);
-        mbgl::CanonicalTileID canonicalTileID = mbgl::CanonicalTileID(tileId.z, tileId.x,tileId.y);
+        mbgl::CanonicalTileID canonicalTileID = mbgl::CanonicalTileID(tileId.z, tileId.x, tileId.y);
         tileVector.push_back(canonicalTileID);
     }
     return mbgl::OfflineTileListRegionDefinition(_styleURL.absoluteString.UTF8String,
@@ -118,8 +118,7 @@
     return [self initWithStyleURL:styleURL bounds:bounds fromZoomLevel:minimumZoomLevel toZoomLevel:maximumZoomLevel tileList:tileList];
 }
 
-- (void)encodeWithCoder:(NSCoder *)coder
-{
+- (void)encodeWithCoder:(NSCoder *)coder {
     [coder encodeObject:_styleURL forKey:@"styleURL"];
     [coder encodeDouble:_bounds.sw.latitude forKey:@"southWestLatitude"];
     [coder encodeDouble:_bounds.sw.longitude forKey:@"southWestLongitude"];
