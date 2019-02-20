@@ -374,6 +374,14 @@
 		74CB5ECF219B285000102936 /* MGLRasterStyleLayer_Private.h in Headers */ = {isa = PBXBuildFile; fileRef = 74CB5EC9219B285000102936 /* MGLRasterStyleLayer_Private.h */; };
 		74CB5ED1219B286400102936 /* MGLSymbolStyleLayer_Private.h in Headers */ = {isa = PBXBuildFile; fileRef = 74CB5ED0219B286400102936 /* MGLSymbolStyleLayer_Private.h */; };
 		74CB5ED2219B286400102936 /* MGLSymbolStyleLayer_Private.h in Headers */ = {isa = PBXBuildFile; fileRef = 74CB5ED0219B286400102936 /* MGLSymbolStyleLayer_Private.h */; };
+		88D5A3132200B0AA00FB12B1 /* MGLTileListOfflineRegion.mm in Sources */ = {isa = PBXBuildFile; fileRef = 88D5A31121FBAF9200FB12B1 /* MGLTileListOfflineRegion.mm */; };
+		88D5A3142200B0BE00FB12B1 /* MGLTileListOfflineRegion.mm in Sources */ = {isa = PBXBuildFile; fileRef = 88D5A31121FBAF9200FB12B1 /* MGLTileListOfflineRegion.mm */; };
+		88D5A3152200B0D200FB12B1 /* MGLTileListOfflineRegion.h in Headers */ = {isa = PBXBuildFile; fileRef = 88D5A30F21FBAF9100FB12B1 /* MGLTileListOfflineRegion.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		88D5A3162200B0F600FB12B1 /* MGLTileListOfflineRegion.h in Headers */ = {isa = PBXBuildFile; fileRef = 88D5A30F21FBAF9100FB12B1 /* MGLTileListOfflineRegion.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		88D5A3192200B56400FB12B1 /* MGLTileID.m in Sources */ = {isa = PBXBuildFile; fileRef = 88D5A3172200B56300FB12B1 /* MGLTileID.m */; };
+		88D5A31A2200B56400FB12B1 /* MGLTileID.m in Sources */ = {isa = PBXBuildFile; fileRef = 88D5A3172200B56300FB12B1 /* MGLTileID.m */; };
+		88D5A31B2200B56400FB12B1 /* MGLTileID.h in Headers */ = {isa = PBXBuildFile; fileRef = 88D5A3182200B56300FB12B1 /* MGLTileID.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		88D5A31C2200B56400FB12B1 /* MGLTileID.h in Headers */ = {isa = PBXBuildFile; fileRef = 88D5A3182200B56300FB12B1 /* MGLTileID.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		8989B17C201A48EB0081CF59 /* MGLHeatmapStyleLayer.h in Headers */ = {isa = PBXBuildFile; fileRef = 8989B17A201A48EA0081CF59 /* MGLHeatmapStyleLayer.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		8989B17D201A48EB0081CF59 /* MGLHeatmapStyleLayer.h in Headers */ = {isa = PBXBuildFile; fileRef = 8989B17A201A48EA0081CF59 /* MGLHeatmapStyleLayer.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		8989B17E201A48EB0081CF59 /* MGLHeatmapStyleLayer.mm in Sources */ = {isa = PBXBuildFile; fileRef = 8989B17B201A48EA0081CF59 /* MGLHeatmapStyleLayer.mm */; };
@@ -1097,6 +1105,11 @@
 		74CB5EC8219B285000102936 /* MGLOpenGLStyleLayer_Private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MGLOpenGLStyleLayer_Private.h; sourceTree = "<group>"; };
 		74CB5EC9219B285000102936 /* MGLRasterStyleLayer_Private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MGLRasterStyleLayer_Private.h; sourceTree = "<group>"; };
 		74CB5ED0219B286400102936 /* MGLSymbolStyleLayer_Private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MGLSymbolStyleLayer_Private.h; sourceTree = "<group>"; };
+		88D5A30F21FBAF9100FB12B1 /* MGLTileListOfflineRegion.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MGLTileListOfflineRegion.h; sourceTree = "<group>"; };
+		88D5A31021FBAF9200FB12B1 /* MGLTileListOfflineRegion_Private.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MGLTileListOfflineRegion_Private.h; sourceTree = "<group>"; };
+		88D5A31121FBAF9200FB12B1 /* MGLTileListOfflineRegion.mm */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = MGLTileListOfflineRegion.mm; sourceTree = "<group>"; tabWidth = 4; };
+		88D5A3172200B56300FB12B1 /* MGLTileID.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MGLTileID.m; sourceTree = "<group>"; };
+		88D5A3182200B56300FB12B1 /* MGLTileID.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MGLTileID.h; sourceTree = "<group>"; };
 		8989B17A201A48EA0081CF59 /* MGLHeatmapStyleLayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MGLHeatmapStyleLayer.h; sourceTree = "<group>"; };
 		8989B17B201A48EA0081CF59 /* MGLHeatmapStyleLayer.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = MGLHeatmapStyleLayer.mm; sourceTree = "<group>"; };
 		920A3E5C1E6F995200C16EFC /* MGLSourceQueryTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = MGLSourceQueryTests.m; path = ../../darwin/test/MGLSourceQueryTests.m; sourceTree = "<group>"; };
@@ -2294,9 +2307,14 @@
 				92FC0AE8207CEE16007B6B54 /* MGLShapeOfflineRegion_Private.h */,
 				92FC0AE7207CEE16007B6B54 /* MGLShapeOfflineRegion.h */,
 				92FC0AE9207CEE16007B6B54 /* MGLShapeOfflineRegion.mm */,
+				88D5A31021FBAF9200FB12B1 /* MGLTileListOfflineRegion_Private.h */,
+				88D5A30F21FBAF9100FB12B1 /* MGLTileListOfflineRegion.h */,
+				88D5A31121FBAF9200FB12B1 /* MGLTileListOfflineRegion.mm */,
 				DA8847ED1CBAFA5100AB86E3 /* MGLTilePyramidOfflineRegion.h */,
 				9221BAAC2069843A0054BDF4 /* MGLTilePyramidOfflineRegion_Private.h */,
 				DA8848101CBAFA6200AB86E3 /* MGLTilePyramidOfflineRegion.mm */,
+				88D5A3182200B56300FB12B1 /* MGLTileID.h */,
+				88D5A3172200B56300FB12B1 /* MGLTileID.m */,
 			);
 			name = "Offline Maps";
 			sourceTree = "<group>";
@@ -2385,6 +2403,7 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				88D5A3162200B0F600FB12B1 /* MGLTileListOfflineRegion.h in Headers */,
 				556660DB1E1D8E8D00E2C41B /* MGLFoundation.h in Headers */,
 				92FC0AEA207CEE16007B6B54 /* MGLShapeOfflineRegion.h in Headers */,
 				35D13AC31D3D19DD00AFB4E0 /* MGLFillStyleLayer.h in Headers */,
@@ -2405,6 +2424,7 @@
 				74CB5EB9219B280400102936 /* MGLHillshadeStyleLayer_Private.h in Headers */,
 				357FE2DD1E02D2B20068B753 /* NSCoder+MGLAdditions.h in Headers */,
 				35D13AB71D3D15E300AFB4E0 /* MGLStyleLayer.h in Headers */,
+				88D5A31B2200B56400FB12B1 /* MGLTileID.h in Headers */,
 				07D947531F67488E00E37934 /* MGLComputedShapeSource_Private.h in Headers */,
 				9654C1261FFC1AB900DB6A19 /* MGLPolyline_Private.h in Headers */,
 				40F887701D7A1E58008ECB67 /* MGLShapeSource_Private.h in Headers */,
@@ -2590,6 +2610,7 @@
 			files = (
 				556660CA1E1BF3A900E2C41B /* MGLFoundation.h in Headers */,
 				96E516ED200058A200A02306 /* MGLComputedShapeSource.h in Headers */,
+				88D5A3152200B0D200FB12B1 /* MGLTileListOfflineRegion.h in Headers */,
 				35B82BF91D6C5F8400B1B721 /* NSPredicate+MGLAdditions.h in Headers */,
 				92FC0AEB207CEE16007B6B54 /* MGLShapeOfflineRegion.h in Headers */,
 				DA35A2CA1CCAAAD200E826B2 /* NSValue+MGLAdditions.h in Headers */,
@@ -2719,6 +2740,7 @@
 				353933F91D3FB79F003F57D7 /* MGLLineStyleLayer.h in Headers */,
 				96E516EB2000560B00A02306 /* MGLUserLocation_Private.h in Headers */,
 				35D13AB81D3D15E300AFB4E0 /* MGLStyleLayer.h in Headers */,
+				88D5A31C2200B56400FB12B1 /* MGLTileID.h in Headers */,
 				35136D4D1D4277FC00C20EFD /* MGLSource.h in Headers */,
 				DA35A2BC1CCA9A6900E826B2 /* MGLClockDirectionFormatter.h in Headers */,
 				96E516E82000560B00A02306 /* MGLAnnotationContainerView_Private.h in Headers */,
@@ -3180,6 +3202,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				88D5A3132200B0AA00FB12B1 /* MGLTileListOfflineRegion.mm in Sources */,
 				9C188C4F2242C95A0022FA55 /* MMEDate.m in Sources */,
 				35136D391D42271A00C20EFD /* MGLBackgroundStyleLayer.mm in Sources */,
 				3510FFEC1D6D9C7A00F413B2 /* NSComparisonPredicate+MGLAdditions.mm in Sources */,
@@ -3197,6 +3220,7 @@
 				40834C481FE05F7500C1BD0D /* vendor_identifier.m in Sources */,
 				DA8848541CBAFB9800AB86E3 /* MGLCompactCalloutView.m in Sources */,
 				40834BEB1FE05E1800C1BD0D /* MMEDependencyManager.m in Sources */,
+				88D5A3192200B56400FB12B1 /* MGLTileID.m in Sources */,
 				40834C411FE05F7500C1BD0D /* parse_configuration.m in Sources */,
 				DA8848251CBAFA6200AB86E3 /* MGLPointAnnotation.mm in Sources */,
 				40834BEA1FE05E1800C1BD0D /* MMEConstants.m in Sources */,
@@ -3317,6 +3341,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				88D5A3142200B0BE00FB12B1 /* MGLTileListOfflineRegion.mm in Sources */,
 				35136D3A1D42271A00C20EFD /* MGLBackgroundStyleLayer.mm in Sources */,
 				3510FFED1D6D9C7A00F413B2 /* NSComparisonPredicate+MGLAdditions.mm in Sources */,
 				40834C501FE05F7600C1BD0D /* TSKSPKIHashCache.m in Sources */,
@@ -3333,6 +3358,7 @@
 				40834C551FE05F7600C1BD0D /* vendor_identifier.m in Sources */,
 				DAA4E4291CBB730400178DFB /* NSBundle+MGLAdditions.m in Sources */,
 				40834BFF1FE05E1800C1BD0D /* MMEDependencyManager.m in Sources */,
+				88D5A31A2200B56400FB12B1 /* MGLTileID.m in Sources */,
 				40834C4E1FE05F7600C1BD0D /* parse_configuration.m in Sources */,
 				40834BFE1FE05E1800C1BD0D /* MMEConstants.m in Sources */,
 				35136D3D1D42272500C20EFD /* MGLCircleStyleLayer.mm in Sources */,

@@ -4,6 +4,8 @@
 #import "MGLOfflineRegion_Private.h"
 #import "MGLTilePyramidOfflineRegion.h"
 #import "MGLTilePyramidOfflineRegion_Private.h"
+#import "MGLTileListOfflineRegion.h"
+#import "MGLTileListOfflineRegion_Private.h"
 #import "MGLShapeOfflineRegion.h"
 #import "MGLShapeOfflineRegion_Private.h"
 #import "MGLLoggingConfiguration_Private.h"
@@ -36,6 +38,10 @@ const MGLExceptionName MGLInvalidOfflinePackException = @"MGLInvalidOfflinePackE
 
 @interface MGLShapeOfflineRegion () <MGLOfflineRegion_Private, MGLShapeOfflineRegion_Private>
 @end
+
+@interface MGLTileListOfflineRegion () <MGLOfflineRegion_Private, MGLTileListOfflineRegion_Private>
+@end
+
 
 class MBGLOfflineRegionObserver : public mbgl::OfflineRegionObserver {
 public:
@@ -89,6 +95,7 @@ private:
 
     const mbgl::OfflineRegionDefinition &regionDefinition = _mbglOfflineRegion->getDefinition();
     MGLAssert([MGLTilePyramidOfflineRegion conformsToProtocol:@protocol(MGLOfflineRegion_Private)], @"MGLTilePyramidOfflineRegion should conform to MGLOfflineRegion_Private.");
+    MGLAssert([MGLTileListOfflineRegion conformsToProtocol:@protocol(MGLOfflineRegion_Private)], @"MGLTilePyramidOfflineRegion should conform to MGLOfflineRegion_Private.");
     MGLAssert([MGLShapeOfflineRegion conformsToProtocol:@protocol(MGLOfflineRegion_Private)], @"MGLShapeOfflineRegion should conform to MGLOfflineRegion_Private.");
     
     
@@ -99,6 +106,9 @@ private:
                            },
                            [&] (const mbgl::OfflineGeometryRegionDefinition& def){
                                return (id <MGLOfflineRegion>)[[MGLShapeOfflineRegion alloc] initWithOfflineRegionDefinition:def];
+                           },
+                           [&] (const mbgl::OfflineTileListRegionDefinition& def){
+                               return (id <MGLOfflineRegion>)[[MGLTileListOfflineRegion alloc] initWithOfflineRegionDefinition:def];
                            });
 }
 
