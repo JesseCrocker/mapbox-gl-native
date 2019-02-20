@@ -520,4 +520,28 @@ const MGLExceptionName MGLUnsupportedRegionTypeException = @"MGLUnsupportedRegio
     [self preloadData:data forURL:url modificationDate:modified expirationDate:expires eTag:etag mustRevalidate:mustRevalidate];
 }
 
+
+- (NSData* _Nullable) fetchTileForTemplate:(NSString*) templateURL pixelRatio:(int) pixelRatio z:(NSInteger)z x:(NSInteger)x y:(NSInteger)y {
+    __block NSData *responseData;
+    dispatch_semaphore_t sem = dispatch_semaphore_create(0);
+  
+    const mbgl::Resource resource = mbgl::Resource::tile(std::string([templateURL UTF8String]),
+                                                       pixelRatio, (int32_t)x, (int32_t)y, (int32_t)z,
+                                                       mbgl::Tileset::Scheme::XYZ,
+                                                       mbgl::Resource::Priority::Regular,
+                                                       mbgl::Resource::LoadingMethod::CacheOnly);
+    std::unique_ptr<mbgl::AsyncRequest> req;
+    req = _mbglFileSource->request(resource, ^void(mbgl::optional<mbgl::Response> response) {
+        if (response && !response->noContent) {
+            responseData = [NSData dataWithBytes:response->data->c_str() length:response->data->length()];
+        }
+        dispatch_semaphore_signal(sem);
+        CFRunLoopStop(CFRunLoopGetCurrent());
+    });
+    CFRunLoopRun();
+    dispatch_semaphore_wait(sem, DISPATCH_TIME_FOREVER);
+    return responseData;
+}
+
+
 @end

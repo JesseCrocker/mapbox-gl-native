@@ -373,6 +373,8 @@ MGL_EXPORT
 
 - (void)putResourceWithUrl:(NSURL *)url data:(NSData *)data modified:(nullable NSDate *)modified expires:(nullable NSDate *)expires etag:(nullable NSString *)etag mustRevalidate:(BOOL)mustRevalidate __attribute__((deprecated("Use -preloadData:forURL:modificationDate:expirationDate:eTag:mustRevalidate:.")));
 
+- (NSData* _Nullable) fetchTileForTemplate:(NSString*) templateURL pixelRatio:(int) pixelRatio z:(NSInteger)z x:(NSInteger)x y:(NSInteger)y;
+
 @end
 
 /**
