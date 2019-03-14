@@ -612,6 +612,7 @@ The 4.0._x_ series of releases will be the last to support iOS 8. The minimum iO
 * Fixed an issue that could prevent a cached style from appearing while the device is offline. ([#7770](https://github.com/mapbox/mapbox-gl-native/pull/7770))
 * Fixed an issue that could prevent a style from loading when reestablishing a network connection. ([#7902](https://github.com/mapbox/mapbox-gl-native/pull/7902))
 * `MGLOfflineStorage` instances now support a delegate conforming to `MGLOfflineStorageDelegate`, which allows altering URLs before they are requested from the Internet. ([#8084](https://github.com/mapbox/mapbox-gl-native/pull/8084))
+* Changed the eviction strategy. The entire maximumCacheSize is now available for ambiently cached items.
 
 ### Other changes
 
