@@ -179,6 +179,10 @@ private:
 }
 
 - (void)offlineRegionStatusDidChange:(mbgl::OfflineRegionStatus)status {
+    if (_state == MGLOfflinePackStateInvalid) {
+        return;
+    }
+    
     MGLAssert(_state != MGLOfflinePackStateInvalid, @"Cannot change update progress of an invalid offline pack.");
 
     switch (status.downloadState) {
