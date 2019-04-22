@@ -10,7 +10,7 @@ public:
     ~HTTPFileSource() override;
 
     std::unique_ptr<AsyncRequest> request(const Resource&, Callback) override;
-
+    uint32_t maximumConcurrentRequests();
     class Impl;
 
 private:

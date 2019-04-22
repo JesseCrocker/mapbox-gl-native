@@ -139,8 +139,16 @@ public:
                         callback(*offlineResponse);
                     }
                 }
-            }
+                
+                
 
+            }
+            
+            auto now = util::now();
+            if (bool(resource.priorExpires) && resource.priorExpires > now) {
+                return;
+            }
+          
             // Get from the online file source
             if (resource.hasLoadingMethod(Resource::LoadingMethod::Network)) {
                 MBGL_TIMING_START(watch);

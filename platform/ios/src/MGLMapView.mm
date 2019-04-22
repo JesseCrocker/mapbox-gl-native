@@ -764,9 +764,14 @@ public:
     MGLReachability *reachability = [notification object];
     if(self.disableNetworkAccess){
         mbgl::NetworkStatus::Set(mbgl::NetworkStatus::Status::Offline);
-    } else if ( ! _isWaitingForRedundantReachableNotification && [reachability isReachable])
+    } else if ( ! _isWaitingForRedundantReachableNotification)
     {
-        mbgl::NetworkStatus::Reachable();
+      if ([reachability isReachable]) {
+          mbgl::NetworkStatus::Set(mbgl::NetworkStatus::Status::Online);
+          mbgl::NetworkStatus::Reachable();
+      } else {
+          mbgl::NetworkStatus::Set(mbgl::NetworkStatus::Status::Offline);
+      }
     }
     _isWaitingForRedundantReachableNotification = NO;
 }

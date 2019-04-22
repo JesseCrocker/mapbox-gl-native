@@ -191,6 +191,10 @@ HTTPFileSource::HTTPFileSource()
 
 HTTPFileSource::~HTTPFileSource() = default;
 
+uint32_t HTTPFileSource::maximumConcurrentRequests() {
+    return 30;
+}
+
 std::unique_ptr<AsyncRequest> HTTPFileSource::request(const Resource& resource, Callback callback) {
     auto request = std::make_unique<HTTPRequest>(callback);
     auto shared = request->shared; // Explicit copy so that it also gets copied into the completion handler block below.

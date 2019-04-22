@@ -138,6 +138,8 @@ class MGLDocumentationExampleTests: XCTestCase, MGLMapViewDelegate {
             pack.resume()
         }
         //#-end-example-code
+        
+        XCTAssertNotNil(region)
     }
     
     func testMGLShape$shapeWithData_encoding_error_() {

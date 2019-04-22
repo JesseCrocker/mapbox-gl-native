@@ -43,6 +43,8 @@ Mapbox welcomes participation and contributions from everyone. Please read [CONT
 
 ### Styles and rendering
 
+### Styles and rendering
+
 * Added an `MGLStyle.performsPlacementTransitions` property to control how long it takes for colliding labels to fade out. ([#13565](https://github.com/mapbox/mapbox-gl-native/pull/13565))
 * Fixed a crash when casting large numbers in `NSExpression`. ([#13580](https://github.com/mapbox/mapbox-gl-native/pull/13580))
 * Added the `-[MGLShapeSource leavesOfCluster:offset:limit:]`, `-[MGLShapeSource childrenOfCluster:]`, `-[MGLShapeSource zoomLevelForExpandingCluster:]` methods for inspecting a cluster in an `MGLShapeSource`s created with the `MGLShapeSourceOptionClustered` option. Feature querying now returns clusters represented by `MGLPointFeatureCluster` objects (that conform to the `MGLCluster` protocol). ([#12952](https://github.com/mapbox/mapbox-gl-native/pull/12952)
@@ -649,6 +651,7 @@ The 4.0._x_ series of releases will be the last to support iOS 8. The minimum iO
 * Fixed an issue that could prevent a cached style from appearing while the device is offline. ([#7770](https://github.com/mapbox/mapbox-gl-native/pull/7770))
 * Fixed an issue that could prevent a style from loading when reestablishing a network connection. ([#7902](https://github.com/mapbox/mapbox-gl-native/pull/7902))
 * `MGLOfflineStorage` instances now support a delegate conforming to `MGLOfflineStorageDelegate`, which allows altering URLs before they are requested from the Internet. ([#8084](https://github.com/mapbox/mapbox-gl-native/pull/8084))
+* Changed the eviction strategy. The entire maximumCacheSize is now available for ambiently cached items.
 
 ### Other changes
 

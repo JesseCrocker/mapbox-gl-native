@@ -14,6 +14,10 @@ task androidNitpick {
         println "Running android nitpick script"
 
         println "Verify vendor submodule pins"
+        exec {
+            workingDir = "${rootDir}"
+            commandLine "git", "submodule", "update", "--init", "--recursive", "vendor"
+        }
         verifyVendorSubmodulePin(MAPBOX_JAVA_DIR, MAPBOX_JAVA_TAG_PREFIX, versions.mapboxServices)
         verifyVendorSubmodulePin(MAPBOX_TELEMETRY_DIR, MAPBOX_TELEMETRY_TAG_PREFIX, versions.mapboxTelemetry)
         verifyVendorSubmodulePin(MAPBOX_GESTURES_DIR, MAPBOX_GESTURES_TAG_PREFIX, versions.mapboxGestures)

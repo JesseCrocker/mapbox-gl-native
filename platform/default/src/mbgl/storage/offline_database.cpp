@@ -23,7 +23,9 @@ OfflineDatabase::OfflineDatabase(std::string path_, uint64_t maximumCacheSize_)
     } catch (const mapbox::sqlite::Exception& ex) {
         handleError(ex, "open database");
     }
+    
     // Assume that we can't open the database right now and work with an empty database object.
+    insertedSinceEvictCheck = maximumCacheSize / 10 - (512 * 1024); // checks for evictions after caching 1/2 MB
 }
 
 OfflineDatabase::~OfflineDatabase() {
@@ -235,8 +237,9 @@ std::pair<bool, uint64_t> OfflineDatabase::putInternal(const Resource& resource,
         size = compressed ? compressedData.size() : response.data->size();
     }
 
-    if (evict_ && !evict(size)) {
-        Log::Info(Event::Database, "Unable to make space for entry");
+
+    if (evict_ && !checkEvict(size)) {
+        Log::Debug(Event::Database, "Unable to make space for entry");
         return { false, 0 };
     }
 
@@ -257,6 +260,7 @@ std::pair<bool, uint64_t> OfflineDatabase::putInternal(const Resource& resource,
 }
 
 optional<std::pair<Response, uint64_t>> OfflineDatabase::getResource(const Resource& resource) {
+    /*
     // Update accessed timestamp used for LRU eviction.
     try {
         mapbox::sqlite::Query accessedQuery{ getStatement("UPDATE resources SET accessed = ?1 WHERE url = ?2") };
@@ -272,6 +276,8 @@ optional<std::pair<Response, uint64_t>> OfflineDatabase::getResource(const Resou
         // If we don't have any indication that the database is corrupt, continue as usual.
         Log::Warning(Event::Database, static_cast<int>(ex.code), "Can't update timestamp: %s", ex.what());
     }
+     */
+
 
     // clang-format off
     mapbox::sqlite::Query query{ getStatement(
@@ -286,6 +292,7 @@ optional<std::pair<Response, uint64_t>> OfflineDatabase::getResource(const Resou
     if (!query.run()) {
         return nullopt;
     }
+    
 
     Response response;
     uint64_t size = 0;
@@ -324,6 +331,7 @@ bool OfflineDatabase::putResource(const Resource& resource,
                                   const std::string& data,
                                   bool compressed) {
     if (response.notModified) {
+        /*
         // clang-format off
         mapbox::sqlite::Query notModifiedQuery{ getStatement(
             "UPDATE resources "
@@ -338,6 +346,8 @@ bool OfflineDatabase::putResource(const Resource& resource,
         notModifiedQuery.bind(3, response.mustRevalidate);
         notModifiedQuery.bind(4, resource.url);
         notModifiedQuery.run();
+         */
+        
         return false;
     }
 
@@ -507,7 +517,13 @@ bool OfflineDatabase::putTile(const Resource::TileData& tile,
                               const Response& response,
                               const std::string& data,
                               bool compressed) {
+    auto expires = response.expires;
+    if (!bool(expires)) {
+      expires = util::now() + Seconds(1209600);
+    }
+  
     if (response.notModified) {
+        /*
         // clang-format off
         mapbox::sqlite::Query notModifiedQuery{ getStatement(
             "UPDATE tiles "
@@ -522,7 +538,7 @@ bool OfflineDatabase::putTile(const Resource::TileData& tile,
         // clang-format on
 
         notModifiedQuery.bind(1, util::now());
-        notModifiedQuery.bind(2, response.expires);
+        notModifiedQuery.bind(2, expires);
         notModifiedQuery.bind(3, response.mustRevalidate);
         notModifiedQuery.bind(4, tile.urlTemplate);
         notModifiedQuery.bind(5, tile.pixelRatio);
@@ -530,6 +546,7 @@ bool OfflineDatabase::putTile(const Resource::TileData& tile,
         notModifiedQuery.bind(7, tile.y);
         notModifiedQuery.bind(8, tile.z);
         notModifiedQuery.run();
+        */
         return false;
     }
 
@@ -554,7 +571,7 @@ bool OfflineDatabase::putTile(const Resource::TileData& tile,
 
     updateQuery.bind(1, response.modified);
     updateQuery.bind(2, response.etag);
-    updateQuery.bind(3, response.expires);
+    updateQuery.bind(3, expires);
     updateQuery.bind(4, response.mustRevalidate);
     updateQuery.bind(5, util::now());
     updateQuery.bind(8, tile.urlTemplate);
@@ -590,7 +607,7 @@ bool OfflineDatabase::putTile(const Resource::TileData& tile,
     insertQuery.bind(6, response.modified);
     insertQuery.bind(7, response.mustRevalidate);
     insertQuery.bind(8, response.etag);
-    insertQuery.bind(9, response.expires);
+    insertQuery.bind(9, expires);
     insertQuery.bind(10, util::now());
 
     if (response.noContent) {
@@ -748,8 +765,7 @@ std::exception_ptr OfflineDatabase::deleteRegion(OfflineRegion&& region) try {
         query.run();
     }
 
-    evict(0);
-    assert(db);
+    evict();
     vacuum();
 
     // Ensure that the cached offlineTileCount value is recalculated.
@@ -773,13 +789,14 @@ optional<std::pair<Response, uint64_t>> OfflineDatabase::getRegionResource(int64
     return nullopt;
 }
 
+
 optional<int64_t> OfflineDatabase::hasRegionResource(int64_t regionID, const Resource& resource) try {
     auto response = hasInternal(resource);
-
+    
     if (response) {
         markUsed(regionID, resource);
     }
-
+    
     return response;
 } catch (const mapbox::sqlite::Exception& ex) {
     handleError(ex, "query region resource");
@@ -808,18 +825,18 @@ void OfflineDatabase::putRegionResources(int64_t regionID,
         initialize();
     }
     mapbox::sqlite::Transaction transaction(*db);
-
+    
     // Accumulate all statistics locally first before adding them to the OfflineRegionStatus object
     // to ensure correctness when the transaction fails.
     uint64_t completedResourceCount = 0;
     uint64_t completedResourceSize = 0;
     uint64_t completedTileCount = 0;
     uint64_t completedTileSize = 0;
-
+    
     for (const auto& elem : resources) {
         const auto& resource = std::get<0>(elem);
         const auto& response = std::get<1>(elem);
-
+        
         try {
             uint64_t resourceSize = putRegionResourceInternal(regionID, resource, response);
             completedResourceCount++;
@@ -834,10 +851,10 @@ void OfflineDatabase::putRegionResources(int64_t regionID,
             throw;
         }
     }
-
+    
     // Commit the completed batch
     transaction.commit();
-
+    
     status.completedResourceCount += completedResourceCount;
     status.completedResourceSize += completedResourceSize;
     status.completedTileCount += completedTileCount;
@@ -850,19 +867,20 @@ uint64_t OfflineDatabase::putRegionResourceInternal(int64_t regionID, const Reso
     if (exceedsOfflineMapboxTileCountLimit(resource)) {
         throw MapboxTileLimitExceededException();
     }
-
+    
     uint64_t size = putInternal(resource, response, false).second;
     bool previouslyUnused = markUsed(regionID, resource);
-
+    
     if (offlineMapboxTileCount
         && resource.kind == Resource::Kind::Tile
         && util::mapbox::isMapboxURL(resource.url)
         && previouslyUnused) {
         *offlineMapboxTileCount += 1;
     }
-
+    
     return size;
 }
+
 
 bool OfflineDatabase::markUsed(int64_t regionID, const Resource& resource) {
     if (resource.kind == Resource::Kind::Tile) {
@@ -890,7 +908,12 @@ bool OfflineDatabase::markUsed(int64_t regionID, const Resource& resource) {
         if (insertQuery.changes() == 0) {
             return false;
         }
-
+      
+        // only check if used if it a mapbox tile, otherwise it doesn't matter.
+        if (!util::mapbox::isMapboxURL(resource.url)) {
+          return false;
+        }
+      
         // clang-format off
         mapbox::sqlite::Query selectQuery{ getStatement(
             "SELECT region_id "
@@ -1004,93 +1027,143 @@ T OfflineDatabase::getPragma(const char* sql) {
     return query.get<T>(0);
 }
 
-// Remove least-recently used resources and tiles until the used database size,
-// as calculated by multiplying the number of in-use pages by the page size, is
-// less than the maximum cache size. Returns false if this condition cannot be
-// satisfied.
-//
-// SQLite database never shrinks in size unless we call VACCUM. We here
-// are monitoring the soft limit (i.e. number of free pages in the file)
-// and as it approaches to the hard limit (i.e. the actual file size) we
-// delete an arbitrary number of old cache entries. The free pages approach saves
-// us from calling VACCUM or keeping a running total, which can be costly.
-bool OfflineDatabase::evict(uint64_t neededFreeSize) {
-    uint64_t pageSize = getPragma<int64_t>("PRAGMA page_size");
-    uint64_t pageCount = getPragma<int64_t>("PRAGMA page_count");
-
-    auto usedSize = [&] {
-        return pageSize * (pageCount - getPragma<int64_t>("PRAGMA freelist_count"));
-    };
-
-    // The addition of pageSize is a fudge factor to account for non `data` column
-    // size, and because pages can get fragmented on the database.
-    while (usedSize() + neededFreeSize + pageSize > maximumCacheSize) {
-        // clang-format off
-        mapbox::sqlite::Query accessedQuery{ getStatement(
-            "SELECT max(accessed) "
-            "FROM ( "
-            "    SELECT accessed "
-            "    FROM resources "
-            "    LEFT JOIN region_resources "
-            "    ON resource_id = resources.id "
-            "    WHERE resource_id IS NULL "
-            "  UNION ALL "
-            "    SELECT accessed "
-            "    FROM tiles "
-            "    LEFT JOIN region_tiles "
-            "    ON tile_id = tiles.id "
-            "    WHERE tile_id IS NULL "
-            "  ORDER BY accessed ASC LIMIT ?1 "
-            ") "
-        ) };
-        accessedQuery.bind(1, 50);
-        // clang-format on
-        if (!accessedQuery.run()) {
-            return false;
-        }
-        Timestamp accessed = accessedQuery.get<Timestamp>(0);
-
-        // clang-format off
-        mapbox::sqlite::Query resourceQuery{ getStatement(
-            "DELETE FROM resources "
-            "WHERE id IN ( "
-            "  SELECT id FROM resources "
-            "  LEFT JOIN region_resources "
-            "  ON resource_id = resources.id "
-            "  WHERE resource_id IS NULL "
-            "  AND accessed <= ?1 "
-            ") ") };
-        // clang-format on
-        resourceQuery.bind(1, accessed);
-        resourceQuery.run();
-        const uint64_t resourceChanges = resourceQuery.changes();
-
-        // clang-format off
-        mapbox::sqlite::Query tileQuery{ getStatement(
-            "DELETE FROM tiles "
-            "WHERE id IN ( "
-            "  SELECT id FROM tiles "
-            "  LEFT JOIN region_tiles "
-            "  ON tile_id = tiles.id "
-            "  WHERE tile_id IS NULL "
-            "  AND accessed <= ?1 "
-            ") ") };
-        // clang-format on
-        tileQuery.bind(1, accessed);
-        tileQuery.run();
-        const uint64_t tileChanges = tileQuery.changes();
-
-        // The cached value of offlineTileCount does not need to be updated
-        // here because only non-offline tiles can be removed by eviction.
-
-        if (resourceChanges == 0 && tileChanges == 0) {
-            return false;
-        }
-    }
-
-    return true;
+// Remove least-recently used resources and tiles until the size of ambiently cached items
+// is less than the maximum cache size. This function keeps a running tally of the size
+// of recently inserted items in the database. Whenever 10% of the maximum cache size has
+// been added, it checks if an eviction is necessary.
+bool OfflineDatabase::checkEvict(uint64_t neededFreeSize) {
+  if (insertedSinceEvictCheck > maximumCacheSize / 10) {
+    insertedSinceEvictCheck = 0;
+    OfflineDatabase::evict();
+  }
+  insertedSinceEvictCheck += neededFreeSize;
+  return neededFreeSize < maximumCacheSize;
 }
 
+// for merging convenience
+bool OfflineDatabase::evict(__attribute__((unused)) uint64_t neededFreeSize) {
+  return evict();
+}
+
+// Tallys the size of the ambiently cached tiles and resources in the database. If the size
+// is greater than the maximum cache size, it deletes 25% of the ambiently cached items.
+// This is run when offline map packs are deleted and regularly when using the map.
+// Returns true if the eviction process was run.
+bool OfflineDatabase::evict() {
+  
+  uint64_t pageSize = getPragma<int64_t>("PRAGMA page_size");
+  uint64_t pageCount = getPragma<int64_t>("PRAGMA page_count");
+  
+  auto usedSize = [&] {
+    return pageSize * (pageCount - getPragma<int64_t>("PRAGMA freelist_count"));
+  };
+  
+  // clang-format off
+  mapbox::sqlite::Query tileCountStmt{ getStatement(
+                                         " SELECT "
+                                         " count(*) "
+                                         "  FROM tiles " ) };
+  // clang-format on
+  if (!tileCountStmt.run()) {
+    return false;
+  }
+  uint64_t totalTileCount = tileCountStmt.get<int64_t>(0);
+  if (totalTileCount == 0) return false;
+  
+  // estimate avg tile size, this will be high because it includes resource and metadata
+  // size averaged in, but that is okay because we remove resources to the same degree as tiles
+  double avgTileSize = usedSize() / (double) totalTileCount;
+  
+  // clang-format off
+  mapbox::sqlite::Query tileSizeStmt{ getStatement(
+                                        " SELECT "
+                                        " count(*) "
+                                        "  FROM tiles "
+                                        "  LEFT JOIN region_tiles "
+                                        "  ON tile_id = tiles.id "
+                                        "  WHERE tile_id IS NULL "
+                                                     )};
+  // clang-format on
+  if (!tileSizeStmt.run()) {
+    return false;
+  }
+  
+  uint64_t tileCount = tileSizeStmt.get<int64_t>(0);
+  
+  if(tileCount == 0) {
+    return false;
+  }
+  
+  uint64_t tileCacheSize = tileCount * avgTileSize;
+  if (tileCacheSize < maximumCacheSize) {
+    return false;
+  }
+  
+  // Try to purge to approximately 75% of the maximum cache size
+  int64_t tilesToDelete = tileCount - (maximumCacheSize / avgTileSize) * 0.75 - 1;
+  if (tilesToDelete < 0) return false;
+  
+  // get accessed time to pivot deletes on
+  // clang-format off
+  mapbox::sqlite::Query getPivotAccessedStmt{getStatement(
+                                                "SELECT accessed "
+                                                "  FROM tiles "
+                                                "  LEFT JOIN region_tiles "
+                                                "  ON tile_id = tiles.id "
+                                                "  WHERE tile_id IS NULL "
+                                                "ORDER BY accessed ASC "
+                                                "LIMIT 1 OFFSET ?1 "
+                                                            )};
+  // clang-format on
+  getPivotAccessedStmt.bind(1, tilesToDelete);
+  if (!getPivotAccessedStmt.run()) {
+    return false;
+  }
+  
+  Timestamp accessed = getPivotAccessedStmt.get<Timestamp>(0);
+  
+  // clang-format off
+  mapbox::sqlite::Query stmt1 { getStatement(
+                                 "DELETE FROM resources "
+                                 "WHERE id IN ( "
+                                 "  SELECT id FROM resources "
+                                 "  LEFT JOIN region_resources "
+                                 "  ON resource_id = resources.id "
+                                 "  WHERE resource_id IS NULL "
+                                 "  AND accessed <= ?1 "
+                                     ") ")};
+  // clang-format on
+  stmt1.bind(1, accessed);
+  stmt1.run();
+  
+  // clang-format off
+  while (true) {
+    mapbox::sqlite::Query stmt2 { getStatement(
+                                   "DELETE FROM tiles "
+                                   "WHERE id IN ( "
+                                   "  SELECT id FROM tiles "
+                                   "  LEFT JOIN region_tiles "
+                                   "  ON tile_id = tiles.id "
+                                   "  WHERE tile_id IS NULL "
+                                   "  AND accessed <= ?1 "
+                                   ") LIMIT 10000")};
+    
+    // clang-format on
+    stmt2.bind(1, accessed);
+    stmt2.run();
+    Log::Info(Event::Database, "deleted tiles %d", stmt2.changes());
+    
+    if (stmt2.changes() < 10000) {
+      break;
+    }
+    
+  }
+  insertedSinceEvictCheck = 0;
+  
+  Log::Info(Event::Database, "Evicted tiles %d", tilesToDelete);
+  return true;
+}
+  
 void OfflineDatabase::setOfflineMapboxTileCountLimit(uint64_t limit) {
     offlineMapboxTileCountLimit = limit;
 }
@@ -1140,7 +1213,7 @@ void OfflineDatabase::setMaximumCacheSize(uint64_t cacheSize) {
     bool runEviction = cacheSize < maximumCacheSize;
     maximumCacheSize = cacheSize;
     if (runEviction) {
-        evict(0);
+        evict();
         vacuum();
     }
 }
