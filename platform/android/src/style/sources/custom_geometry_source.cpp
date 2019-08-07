@@ -65,8 +65,9 @@ namespace android {
         static auto& javaClass = jni::Class<CustomGeometrySource>::Singleton(*_env);
         static auto fetchTile = javaClass.GetMethod<void (jni::jint, jni::jint, jni::jint)>(*_env, "fetchTile");
 
-        assert(javaPeer);
-
+        if(!javaPeer) {
+            return;
+        }
         auto peer = jni::Cast(*_env, javaClass, javaPeer);
         peer.Call(*_env, fetchTile, (int)tileID.z, (int)tileID.x, (int)tileID.y);
     };
@@ -77,8 +78,9 @@ namespace android {
         static auto& javaClass = jni::Class<CustomGeometrySource>::Singleton(*_env);
         static auto cancelTile = javaClass.GetMethod<void (jni::jint, jni::jint, jni::jint)>(*_env, "cancelTile");
 
-        assert(javaPeer);
-
+        if(!javaPeer) {
+            return;
+        }
         auto peer = jni::Cast(*_env, javaClass, javaPeer);
         peer.Call(*_env, cancelTile, (int)tileID.z, (int)tileID.x, (int)tileID.y);
     };
