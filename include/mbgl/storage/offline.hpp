@@ -7,6 +7,7 @@
 #include <mbgl/util/variant.hpp>
 #include <mbgl/style/types.hpp>
 #include <mbgl/storage/response.hpp>
+#include <mbgl/tile/tile_id.hpp>
 
 #include <string>
 #include <vector>
@@ -65,9 +66,34 @@ public:
 };
 
 /*
+ * An offline region defined by a style URL, list of tile IDs, and
+ * device pixel ratio.
+ *
+ * Both minZoom and maxZoom must be ≥ 0, and maxZoom must be ≥ minZoom.
+ *
+ * maxZoom may be ∞, in which case for each tile source, the region will include
+ * tiles from minZoom up to the maximum zoom level provided by that source.
+ *
+ * pixelRatio must be ≥ 0 and should typically be 1.0 or 2.0.
+ */
+class OfflineTileListRegionDefinition {
+public:
+    OfflineTileListRegionDefinition(std::string, LatLngBounds, double, double, float, bool, std::vector<CanonicalTileID>);
+
+    /* Private */
+    const std::string styleURL;
+    const LatLngBounds bounds;
+    const double minZoom;
+    const double maxZoom;
+    const float pixelRatio;
+    const bool includeIdeographs;
+    const std::vector<CanonicalTileID> tileList;
+};
+
+/*
  * The offline region definition types supported
  */
-using OfflineRegionDefinition = variant<OfflineTilePyramidRegionDefinition, OfflineGeometryRegionDefinition>;
+using OfflineRegionDefinition = variant<OfflineTilePyramidRegionDefinition, OfflineGeometryRegionDefinition, OfflineTileListRegionDefinition>;
 
 /*
  * The encoded format is private.
